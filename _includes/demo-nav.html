@@ -1,0 +1,41 @@
+<nav class="demo-nav">
+  <div class="demo-nav-inner">
+    {% if page.prev_url %}
+    <a href="{{ page.prev_url | relative_url }}" class="demo-nav-btn prev">
+      <span class="demo-nav-arrow">←</span>
+      <span class="demo-nav-label">
+        <span class="demo-nav-hint">Anterior</span>
+        <span class="demo-nav-title">{{ page.prev_title }}</span>
+      </span>
+    </a>
+    {% else %}
+    <div class="demo-nav-btn disabled">
+      <span class="demo-nav-arrow">←</span>
+      <span class="demo-nav-label">
+        <span class="demo-nav-hint">Primera clase</span>
+      </span>
+    </div>
+    {% endif %}
+
+    <a href="{{ '/' | relative_url }}" class="demo-nav-index">
+      ⊞ Índice
+    </a>
+
+    {% if page.next_url %}
+    <a href="{{ page.next_url | relative_url }}" class="demo-nav-btn next">
+      <span class="demo-nav-label">
+        <span class="demo-nav-hint">Siguiente</span>
+        <span class="demo-nav-title">{{ page.next_title }}</span>
+      </span>
+      <span class="demo-nav-arrow">→</span>
+    </a>
+    {% else %}
+    <div class="demo-nav-btn disabled">
+      <span class="demo-nav-label">
+        <span class="demo-nav-hint">Última clase</span>
+      </span>
+      <span class="demo-nav-arrow">→</span>
+    </div>
+    {% endif %}
+  </div>
+</nav>
