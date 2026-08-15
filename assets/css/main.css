@@ -1751,3 +1751,202 @@ details.info-toggle .toggle-body li { margin-bottom: 0.4rem; }
 @media (max-width: 820px) {
   .two-col-charts, .tree-layout { flex-direction: column; }
 }
+
+/* ============================================================
+   Módulo 2 — shared demo controls & stats (generic, reused
+   across pathfinding / minimax / hill-climbing)
+   ============================================================ */
+.demo-controls { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+
+.demo-controls select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.85rem;
+  font-family: var(--font-sans);
+}
+
+.demo-controls button {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.demo-controls button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.demo-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.demo-controls button.primary {
+  border-color: var(--accent);
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--accent);
+}
+
+.demo-controls button.active {
+  border-color: var(--accent);
+  background: rgba(88, 166, 255, 0.15);
+  color: var(--accent);
+}
+
+.demo-speed {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.demo-speed input[type="range"] { flex: 1; max-width: 200px; accent-color: var(--accent); }
+
+.stats-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+.success-banner.fail {
+  border-color: rgba(248, 81, 73, 0.3);
+  background: rgba(248, 81, 73, 0.08);
+  color: var(--danger);
+}
+
+.compare-bar-fill.bfs { background: var(--accent3); }
+.compare-bar-fill.dfs { background: var(--warn); }
+.compare-bar-fill.astar { background: var(--accent); }
+
+/* ============================================================
+   Pathfinding — maze grid
+   ============================================================ */
+.maze-wrap { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start; }
+.maze-grid-wrap { flex: 0 0 auto; }
+
+.maze-grid {
+  display: grid;
+  gap: 2px;
+  background: var(--border);
+  padding: 2px;
+  border-radius: var(--radius-md);
+  user-select: none;
+}
+
+.maze-cell {
+  width: 28px;
+  height: 28px;
+  background: var(--surface2);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.12s ease;
+}
+
+.maze-cell:hover { background: var(--surface); }
+.maze-cell.wall { background: var(--border); }
+.maze-cell.frontier { background: rgba(210, 153, 34, 0.4); }
+.maze-cell.visited { background: rgba(88, 166, 255, 0.2); }
+.maze-cell.path { background: var(--accent); }
+.maze-cell.start { background: rgba(63, 185, 80, 0.4); }
+.maze-cell.end { background: rgba(248, 81, 73, 0.4); }
+
+.maze-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.maze-legend-item { display: flex; align-items: center; gap: 0.4rem; }
+
+.maze-legend-swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+.maze-legend-swatch.wall { background: var(--border); }
+.maze-legend-swatch.frontier { background: rgba(210, 153, 34, 0.6); }
+.maze-legend-swatch.visited { background: rgba(88, 166, 255, 0.35); }
+.maze-legend-swatch.path { background: var(--accent); }
+.maze-legend-swatch.start { background: var(--accent3); }
+.maze-legend-swatch.end { background: var(--danger); }
+
+/* ============================================================
+   Minimax — tic-tac-toe board
+   ============================================================ */
+.ttt-layout { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start; }
+
+.ttt-side {
+  flex: 1 1 280px;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ttt-board {
+  display: grid;
+  grid-template-columns: repeat(3, 84px);
+  grid-template-rows: repeat(3, 84px);
+  gap: 6px;
+  background: var(--border);
+  padding: 6px;
+  border-radius: var(--radius-md);
+}
+
+.ttt-cell {
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.ttt-cell:hover:not(.filled) { background: var(--surface); }
+.ttt-cell.x { color: var(--accent); }
+.ttt-cell.o { color: var(--accent2); }
+.ttt-cell.win { background: rgba(63, 185, 80, 0.22); }
+
+/* ============================================================
+   Hill climbing — 3D terrain
+   ============================================================ */
+.hill-layout { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start; }
+.terrain-col { flex: 1 1 480px; min-width: 320px; }
+
+.terrain-wrap {
+  position: relative;
+  width: 100%;
+  height: 440px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+
+.terrain-wrap:active { cursor: grabbing; }
+.terrain-wrap canvas { display: block; }
+
+.terrain-hud {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  background: rgba(13, 17, 23, 0.75);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text);
+  pointer-events: none;
+  max-width: 80%;
+}
+
+@media (max-width: 720px) {
+  .ttt-board { grid-template-columns: repeat(3, 72px); grid-template-rows: repeat(3, 72px); }
+  .terrain-wrap { height: 340px; }
+}

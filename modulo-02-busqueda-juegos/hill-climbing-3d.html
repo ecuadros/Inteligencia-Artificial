@@ -1,0 +1,456 @@
+---
+layout: demo
+title: "Hill climbing sobre paisaje 3D"
+subtitle: "No hay mapa del espacio de soluciones — solo puedes sentir la pendiente bajo tus pies y subir. ¿Qué tan lejos te lleva eso?"
+eyebrow: "Módulo 2 · Búsqueda y Juegos"
+module: 2
+module_title: "Búsqueda y Juegos"
+prev_url: "/modulo-02-busqueda-juegos/minimax-tictactoe.html"
+prev_title: "Minimax y poda alfa-beta en tres en línea"
+---
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#paisaje">Paisaje 3D</a>
+  <a href="#mecanica">Cómo funciona</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>Optimizar sin tener el mapa completo</h2>
+  <p>
+    Ajustar los hiperparámetros de un modelo, diseñar la forma de una pieza mecánica o afinar la
+    configuración de un sistema tienen algo en común: el espacio de posibles configuraciones es enorme, y
+    no existe un mapa completo que muestre de antemano cuál es la mejor. Lo único que puedes hacer es
+    <strong>evaluar tu configuración actual y moverte hacia una vecina un poco mejor</strong> — sentir la
+    pendiente bajo tus pies, no ver el paisaje entero desde arriba.
+  </p>
+  <p>
+    Ese es exactamente el problema que vas a explorar aquí, pero hecho literal: un paisaje 3D donde la
+    altura representa qué tan buena es cada configuración (más alto = mejor), y un "escalador" que solo
+    puede dar un paso hacia donde el terreno sube.
+  </p>
+  <div class="callout">
+    <strong>Búsqueda local:</strong> a diferencia del laberinto (donde existe un mapa explícito de celdas y
+    conexiones), aquí no hay una lista de "estados" para explorar sistemáticamente — solo una función
+    objetivo que puedes evaluar en el punto donde estás y en sus vecinos inmediatos.
+  </div>
+</section>
+
+<section class="demo-section" id="paisaje">
+  <span class="section-kicker">// práctica</span>
+  <h2>Elige un punto de partida y sube</h2>
+  <p>
+    Arrastra para rotar la cámara y usa la rueda del mouse para acercar o alejar. Haz clic sobre el
+    terreno para soltar al escalador ahí, y luego dale a "Subir la colina".
+  </p>
+
+  <div class="game-panel">
+    <div class="hill-layout">
+      <div class="terrain-col">
+        <div class="terrain-wrap" id="terrain-wrap">
+          <div class="terrain-hud" id="terrain-hud">Haz clic en el terreno para elegir un punto de partida.</div>
+        </div>
+        <p class="game-hint">Arrastra = rotar cámara · rueda del mouse = zoom · clic en el terreno = punto de partida.</p>
+      </div>
+
+      <div class="vacuum-side">
+        <div class="demo-controls">
+          <button id="hill-toggle" class="primary" disabled>▶ Subir la colina</button>
+          <button id="hill-step" disabled>⏭ Paso</button>
+          <button id="hill-new-landscape">🏔️ Nuevo paisaje</button>
+        </div>
+        <div class="demo-speed">
+          <span>Velocidad</span>
+          <input type="range" id="hill-speed" min="20" max="400" value="140" step="20" />
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-value" id="stat-height">—</div><div class="stat-label">Altura actual</div></div>
+          <div class="stat-box"><div class="stat-value" id="stat-hillsteps">0</div><div class="stat-label">Pasos dados</div></div>
+        </div>
+
+        <div class="success-banner hidden" id="hill-result"></div>
+
+        <div>
+          <button class="btn-primary" id="hill-restarts">Reinicios aleatorios (8 puntos)</button>
+          <p class="reveal-hint" id="restarts-summary"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>Subir siempre, sin mirar más allá del siguiente paso</h2>
+  <p>
+    En cada paso, <strong>hill climbing</strong> (ascenso de colina) evalúa la altura en varios puntos
+    vecinos alrededor de la posición actual y se mueve al vecino más alto — siempre que sea más alto que
+    donde ya estás. Cuando ningún vecino es más alto, el algoritmo se detiene: llegó a un
+    <strong>máximo local</strong>.
+  </p>
+  <p>
+    El problema es justamente ese: un máximo local no es necesariamente el punto más alto de todo el
+    paisaje (el <strong>máximo global</strong>). Prueba soltar al escalador en distintos puntos del mismo
+    paisaje — vas a ver que termina en picos distintos según dónde empezó, porque nunca "ve" más allá de
+    sus vecinos inmediatos.
+  </p>
+  <div class="callout accent2">
+    <strong>Reinicios aleatorios:</strong> si corres hill climbing muchas veces desde puntos de partida
+    distintos y te quedas con el mejor resultado, aumentas mucho la probabilidad de encontrar el máximo
+    global — sin garantizarlo nunca del todo. Es una estrategia simple y sorprendentemente efectiva para
+    escapar de óptimos locales mediocres.
+  </div>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>¿Qué otros problemas reales de ingeniería tienen esta misma estructura de "paisaje con muchos picos"?</li>
+    <li>¿Por qué un paisaje más "accidentado" (con más picos pequeños) hace que hill climbing dependa más del punto de partida?</li>
+    <li>El próximo módulo va a mostrar descenso de gradiente para entrenar un modelo. ¿Por qué ese algoritmo enfrenta exactamente el mismo problema de óptimos locales que viste aquí?</li>
+    <li>¿Qué desventaja tienen los reinicios aleatorios frente a hill climbing con un solo intento? ¿Vale la pena el costo extra?</li>
+  </ul>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  if (typeof THREE === 'undefined') {
+    document.getElementById('terrain-hud').textContent = 'No se pudo cargar la librería 3D (Three.js). Revisa tu conexión.';
+    return;
+  }
+
+  var DOMAIN = 14;
+  var STEP = 0.8;
+  var DIRS = [
+    [1, 0], [-1, 0], [0, 1], [0, -1],
+    [0.7071, 0.7071], [0.7071, -0.7071], [-0.7071, 0.7071], [-0.7071, -0.7071]
+  ];
+
+  function mulberry32(a) {
+    return function () {
+      var t = (a += 0x6D2B79F5);
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function makeHeightFn(seed) {
+    var rand = mulberry32(seed);
+    var terms = [];
+    for (var i = 0; i < 5; i++) {
+      terms.push({
+        fx: 0.12 + rand() * 0.28,
+        fz: 0.12 + rand() * 0.28,
+        phase: rand() * Math.PI * 2,
+        amp: 1.1 + rand() * 1.7
+      });
+    }
+    return function (x, z) {
+      var h = 0;
+      for (var j = 0; j < terms.length; j++) {
+        var t = terms[j];
+        h += t.amp * Math.sin(x * t.fx + t.phase) * Math.cos(z * t.fz + t.phase * 0.7);
+      }
+      return h;
+    };
+  }
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function bestNeighbor(heightFn, x, z) {
+    var currentH = heightFn(x, z);
+    var best = null;
+    for (var i = 0; i < DIRS.length; i++) {
+      var nx = clamp(x + DIRS[i][0] * STEP, -DOMAIN, DOMAIN);
+      var nz = clamp(z + DIRS[i][1] * STEP, -DOMAIN, DOMAIN);
+      var nh = heightFn(nx, nz);
+      if (nh > currentH + 1e-4 && (!best || nh > best.h)) best = { x: nx, z: nz, h: nh };
+    }
+    return best;
+  }
+
+  function $(id) { return document.getElementById(id); }
+
+  var wrapEl = $('terrain-wrap');
+  var hudEl = $('terrain-hud');
+  var toggleBtn = $('hill-toggle');
+  var stepBtn = $('hill-step');
+  var newLandscapeBtn = $('hill-new-landscape');
+  var speedSlider = $('hill-speed');
+  var statHeight = $('stat-height');
+  var statSteps = $('stat-hillsteps');
+  var resultBanner = $('hill-result');
+  var restartsBtn = $('hill-restarts');
+  var restartsSummary = $('restarts-summary');
+
+  var heightFn = makeHeightFn(1);
+  var scene, camera, renderer, terrainMesh, climberMesh;
+  var trailGroup = new THREE.Group();
+  var restartGroup = new THREE.Group();
+
+  var spherical = { radius: 34, theta: Math.PI / 4, phi: Math.PI / 3.2 };
+  var dragging = false, lastX = 0, lastY = 0, dragDistance = 0;
+
+  var climber = { x: null, z: null, h: null, steps: 0, active: false, finished: false, timer: null, running: false };
+
+  function updateCameraPosition() {
+    var x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+    var y = spherical.radius * Math.cos(spherical.phi);
+    var z = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+    camera.position.set(x, y, z);
+    camera.lookAt(0, 0, 0);
+  }
+
+  function buildTerrain() {
+    if (terrainMesh) {
+      scene.remove(terrainMesh);
+      terrainMesh.geometry.dispose();
+      terrainMesh.material.dispose();
+    }
+    var size = DOMAIN * 2 + 2;
+    var segs = 64;
+    var geo = new THREE.PlaneGeometry(size, size, segs, segs);
+    var pos = geo.attributes.position;
+    var minH = Infinity, maxH = -Infinity;
+    var heights = [];
+    for (var i = 0; i < pos.count; i++) {
+      var hx = pos.getX(i), hy = pos.getY(i);
+      var h = heightFn(hx, hy);
+      heights.push(h);
+      if (h < minH) minH = h;
+      if (h > maxH) maxH = h;
+      pos.setZ(i, h);
+    }
+    var colors = [];
+    var low = new THREE.Color(0x1c2a4a);
+    var mid = new THREE.Color(0x58a6ff);
+    var high = new THREE.Color(0xbc8cff);
+    for (var j = 0; j < heights.length; j++) {
+      var t = (heights[j] - minH) / Math.max(0.0001, maxH - minH);
+      var col = new THREE.Color();
+      if (t < 0.55) col.copy(low).lerp(mid, t / 0.55);
+      else col.copy(mid).lerp(high, (t - 0.55) / 0.45);
+      colors.push(col.r, col.g, col.b);
+    }
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geo.computeVertexNormals();
+
+    var mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.05 });
+    terrainMesh = new THREE.Mesh(geo, mat);
+    terrainMesh.rotation.x = -Math.PI / 2;
+    scene.add(terrainMesh);
+  }
+
+  function terrainYAt(mapX, mapZ) { return heightFn(mapX, mapZ); }
+
+  function addTrailMarker(mapX, mapZ, h, color, size) {
+    var geo = new THREE.SphereGeometry(size || 0.22, 10, 10);
+    var mat = new THREE.MeshBasicMaterial({ color: color || 0x58a6ff });
+    var sphere = new THREE.Mesh(geo, mat);
+    sphere.position.set(mapX, h + 0.12, -mapZ);
+    trailGroup.add(sphere);
+    return sphere;
+  }
+
+  function placeClimberMarker(mapX, mapZ, h) {
+    if (!climberMesh) {
+      var geo = new THREE.SphereGeometry(0.42, 16, 16);
+      var mat = new THREE.MeshStandardMaterial({ color: 0xf85149, emissive: 0x4a0f0d });
+      climberMesh = new THREE.Mesh(geo, mat);
+      scene.add(climberMesh);
+    }
+    climberMesh.position.set(mapX, h + 0.3, -mapZ);
+    climberMesh.visible = true;
+  }
+
+  function clearGroup(group) {
+    while (group.children.length) {
+      var c = group.children.pop();
+      c.geometry.dispose();
+      c.material.dispose();
+      group.remove(c);
+    }
+  }
+
+  function resetClimberState(mapX, mapZ) {
+    stopClimbing();
+    var h = terrainYAt(mapX, mapZ);
+    climber = { x: mapX, z: mapZ, h: h, steps: 0, active: true, finished: false, timer: null, running: false };
+    clearGroup(trailGroup);
+    placeClimberMarker(mapX, mapZ, h);
+    statHeight.textContent = h.toFixed(2);
+    statSteps.textContent = '0';
+    resultBanner.classList.add('hidden');
+    toggleBtn.disabled = false;
+    stepBtn.disabled = false;
+    toggleBtn.textContent = '▶ Subir la colina';
+    hudEl.textContent = 'Punto de partida listo — altura ' + h.toFixed(2) + '. Pulsa "Subir la colina".';
+  }
+
+  function climbStepOnce() {
+    if (!climber.active || climber.finished) return;
+    var nb = bestNeighbor(heightFn, climber.x, climber.z);
+    if (!nb) {
+      climber.finished = true;
+      stopClimbing();
+      resultBanner.textContent = 'Máximo local alcanzado en ' + climber.steps + ' pasos, altura ' + climber.h.toFixed(2) + '.';
+      resultBanner.className = 'success-banner';
+      resultBanner.classList.remove('hidden');
+      return;
+    }
+    addTrailMarker(climber.x, climber.z, climber.h, 0x58a6ff, 0.16);
+    climber.x = nb.x; climber.z = nb.z; climber.h = nb.h; climber.steps++;
+    placeClimberMarker(climber.x, climber.z, climber.h);
+    statHeight.textContent = climber.h.toFixed(2);
+    statSteps.textContent = climber.steps;
+  }
+
+  function startClimbing() {
+    if (!climber.active || climber.finished) return;
+    climber.running = true;
+    toggleBtn.textContent = '⏸ Pausar';
+    var delay = 440 - parseInt(speedSlider.value, 10);
+    climber.timer = setInterval(climbStepOnce, Math.max(delay, 20));
+  }
+
+  function stopClimbing() {
+    if (climber && climber.timer) clearInterval(climber.timer);
+    if (climber) { climber.running = false; climber.timer = null; }
+    toggleBtn.textContent = '▶ Subir la colina';
+  }
+
+  toggleBtn.addEventListener('click', function () {
+    if (climber.running) stopClimbing(); else startClimbing();
+  });
+  stepBtn.addEventListener('click', function () { if (!climber.running) climbStepOnce(); });
+
+  newLandscapeBtn.addEventListener('click', function () {
+    heightFn = makeHeightFn(Math.floor(Math.random() * 1e9));
+    buildTerrain();
+    clearGroup(trailGroup);
+    clearGroup(restartGroup);
+    if (climberMesh) climberMesh.visible = false;
+    climber = { x: null, z: null, h: null, steps: 0, active: false, finished: false, timer: null, running: false };
+    toggleBtn.disabled = true; stepBtn.disabled = true;
+    statHeight.textContent = '—'; statSteps.textContent = '0';
+    resultBanner.classList.add('hidden');
+    restartsSummary.textContent = '';
+    hudEl.textContent = 'Haz clic en el terreno para elegir un punto de partida.';
+  });
+
+  restartsBtn.addEventListener('click', function () {
+    clearGroup(restartGroup);
+    var results = [];
+    for (var i = 0; i < 8; i++) {
+      var x = (Math.random() * 2 - 1) * DOMAIN;
+      var z = (Math.random() * 2 - 1) * DOMAIN;
+      var h = terrainYAt(x, z);
+      var guard = 0;
+      while (guard < 300) {
+        var nb = bestNeighbor(heightFn, x, z);
+        if (!nb) break;
+        x = nb.x; z = nb.z; h = nb.h;
+        guard++;
+      }
+      results.push({ x: x, z: z, h: h });
+      var geo = new THREE.SphereGeometry(0.3, 12, 12);
+      var mat = new THREE.MeshStandardMaterial({ color: 0x3fb950, emissive: 0x0c2a12 });
+      var marker = new THREE.Mesh(geo, mat);
+      marker.position.set(x, h + 0.2, -z);
+      restartGroup.add(marker);
+    }
+    results.sort(function (a, b) { return b.h - a.h; });
+    var best = results[0];
+    restartsSummary.textContent = 'Mejor de 8 puntos aleatorios: altura ' + best.h.toFixed(2) +
+      ' en (' + best.x.toFixed(1) + ', ' + best.z.toFixed(1) + '). Alturas encontradas: ' +
+      results.map(function (r) { return r.h.toFixed(1); }).join(', ') + '.';
+  });
+
+  function onPointerDown(e) {
+    dragging = true;
+    dragDistance = 0;
+    lastX = e.clientX; lastY = e.clientY;
+  }
+  function onPointerMove(e) {
+    if (!dragging) return;
+    var dx = e.clientX - lastX, dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    dragDistance += Math.abs(dx) + Math.abs(dy);
+    spherical.theta -= dx * 0.006;
+    spherical.phi = clamp(spherical.phi - dy * 0.006, 0.2, 1.4);
+    updateCameraPosition();
+  }
+  function onPointerUp() { dragging = false; }
+  function onWheel(e) {
+    e.preventDefault();
+    spherical.radius = clamp(spherical.radius + e.deltaY * 0.02, 14, 60);
+    updateCameraPosition();
+  }
+
+  function onClickTerrain(e) {
+    if (dragDistance > 4) return;
+    var rect = wrapEl.getBoundingClientRect();
+    var mx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    var my = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    var raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera({ x: mx, y: my }, camera);
+    var hits = raycaster.intersectObject(terrainMesh);
+    if (hits.length === 0) return;
+    var p = hits[0].point;
+    var mapX = p.x, mapZ = -p.z;
+    resetClimberState(clamp(mapX, -DOMAIN, DOMAIN), clamp(mapZ, -DOMAIN, DOMAIN));
+  }
+
+  function initScene() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0d1117);
+
+    var rect = wrapEl.getBoundingClientRect();
+    camera = new THREE.PerspectiveCamera(48, rect.width / rect.height, 0.1, 500);
+    updateCameraPosition();
+
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(rect.width, rect.height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    wrapEl.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0x8899aa, 0.65));
+    var dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    dirLight.position.set(18, 26, 12);
+    scene.add(dirLight);
+
+    scene.add(trailGroup);
+    scene.add(restartGroup);
+
+    buildTerrain();
+
+    renderer.domElement.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
+    renderer.domElement.addEventListener('click', onClickTerrain);
+
+    window.addEventListener('resize', function () {
+      var r = wrapEl.getBoundingClientRect();
+      camera.aspect = r.width / r.height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(r.width, r.height);
+    });
+
+    (function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    })();
+  }
+
+  initScene();
+})();
+</script>
