@@ -1,0 +1,327 @@
+---
+layout: demo
+title: "Minimax y poda alfa-beta en tres en línea"
+subtitle: "Jugar bien no es solo buscar tu mejor jugada — es anticipar la mejor respuesta de un oponente que también juega para ganar."
+eyebrow: "Módulo 2 · Búsqueda y Juegos"
+module: 2
+module_title: "Búsqueda y Juegos"
+prev_url: "/modulo-02-busqueda-juegos/pathfinding-laberinto.html"
+prev_title: "Pathfinding BFS/DFS/A* en laberinto"
+next_url: "/modulo-02-busqueda-juegos/hill-climbing-3d.html"
+next_title: "Hill climbing sobre paisaje 3D"
+---
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#juego">Juega</a>
+  <a href="#mecanica">Cómo funciona</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>Cuando tu ganancia es la pérdida de otro</h2>
+  <p>
+    Los demos anteriores buscaban un camino en un mundo que no reacciona. Pero en un juego de mesa, una
+    negociación o una subasta hay <strong>otro agente</strong> tomando decisiones activamente en tu contra.
+    No basta con encontrar tu mejor jugada — necesitas anticipar la mejor respuesta de un oponente que
+    también está jugando para ganar.
+  </p>
+  <p>
+    Tres en línea es lo suficientemente pequeño para resolverlo por completo: un programa puede explorar
+    <em>todo</em> el árbol de partidas posibles y jugar de forma perfecta. Vas a jugar contra ese programa.
+  </p>
+  <div class="callout">
+    <strong>Juego de suma cero:</strong> lo que es bueno para un jugador es exactamente igual de malo para
+    el otro. Ganar la IA vale +1, ganar tú vale -1 (desde la perspectiva de la IA), y un empate vale 0.
+  </div>
+</section>
+
+<section class="demo-section" id="juego">
+  <span class="section-kicker">// práctica</span>
+  <h2>Juega contra la IA</h2>
+  <p>Tú eres X y empiezas siempre. Después de cada jugada de la IA verás cuántas posiciones evaluó para decidir.</p>
+
+  <div class="game-panel">
+    <div class="ttt-layout">
+      <div>
+        <div class="ttt-board" id="ttt-board"></div>
+        <p class="game-hint" id="turn-indicator">Tu turno — juegas X</p>
+      </div>
+
+      <div class="ttt-side">
+        <div class="demo-controls">
+          <button id="mode-perfect" class="active">IA perfecta</button>
+          <button id="mode-errors">IA con errores</button>
+          <button id="new-game" class="primary">↺ Nueva partida</button>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-value" id="score-x">0</div><div class="stat-label">Jugador</div></div>
+          <div class="stat-box"><div class="stat-value" id="score-o">0</div><div class="stat-label">IA</div></div>
+          <div class="stat-box"><div class="stat-value" id="score-draw">0</div><div class="stat-label">Empates</div></div>
+        </div>
+
+        <div class="percept-panel">
+          <div class="percept-row"><span>Nodos evaluados (con poda):</span><span id="nodes-pruned">—</span></div>
+          <div class="percept-row"><span>Nodos evaluados (sin poda):</span><span id="nodes-plain">—</span></div>
+          <div class="percept-row"><span>Valor minimax de esta jugada:</span><span id="minimax-value">—</span></div>
+        </div>
+
+        <div class="success-banner hidden" id="game-result"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>Maximizar tu peor caso</h2>
+  <p>
+    <strong>Minimax</strong> explora el árbol de jugadas posibles asumiendo que la IA (MAX) siempre elige la
+    jugada que más la beneficia, y que el jugador (MIN) siempre elige la que más perjudica a la IA. La IA no
+    elige la jugada que "parece mejor" ahora mismo — elige la que le da el mejor resultado garantizado
+    <em>asumiendo que tú también juegas de forma óptima en tu contra</em>.
+  </p>
+  <p>
+    <strong>Poda alfa-beta</strong> no cambia el resultado — la IA elige exactamente la misma jugada — pero
+    evita explorar ramas del árbol que ya sabemos que no van a cambiar la decisión final. Si mientras
+    exploras una rama descubres que el oponente ya tiene una alternativa mejor en otra parte del árbol,
+    puedes dejar de explorar esa rama: ya no importa qué tan buena o mala termine siendo, porque el oponente
+    jamás la va a permitir. Compara los dos contadores de nodos en el panel mientras juegas: la poda suele
+    ahorrar una fracción enorme del trabajo, sobre todo en las primeras jugadas de la partida.
+  </p>
+  <div class="callout accent2">
+    Con la IA en modo "perfecta", tres en línea siempre termina en empate si tú también juegas bien —
+    exactamente lo que predice la teoría de juegos para un juego de suma cero, información perfecta y
+    tamaño pequeño como este. Si logras ganarle, fue porque cometió un error deliberado en modo "con
+    errores", no porque haya un truco contra el minimax perfecto.
+  </div>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>¿Por qué el ajedrez no se puede resolver con minimax puro de la misma forma que tres en línea, aun con una computadora muy rápida?</li>
+    <li>¿Qué tendría que agregarse a este enfoque para jugar bien un juego demasiado grande para explorar completo (por ejemplo, evaluar posiciones sin llegar hasta el final)?</li>
+    <li>¿"Jugar para nunca perder" es lo mismo que "jugar bien"? ¿Cuándo podrían no coincidir esos dos objetivos?</li>
+    <li>La poda alfa-beta depende del orden en que se exploran las jugadas. ¿Por qué explorar primero las jugadas más prometedoras podría podar aún más nodos?</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  var LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+
+  var state = {
+    board: Array(9).fill(null),
+    turn: 'X',
+    mode: 'perfect',
+    gameOver: false,
+    scores: { X: 0, O: 0, draw: 0 }
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  var boardEl = $('ttt-board');
+  var turnIndicator = $('turn-indicator');
+  var modePerfectBtn = $('mode-perfect');
+  var modeErrorsBtn = $('mode-errors');
+  var newGameBtn = $('new-game');
+  var scoreXEl = $('score-x');
+  var scoreOEl = $('score-o');
+  var scoreDrawEl = $('score-draw');
+  var nodesPrunedEl = $('nodes-pruned');
+  var nodesPlainEl = $('nodes-plain');
+  var minimaxValueEl = $('minimax-value');
+  var resultBanner = $('game-result');
+  var cellEls = [];
+
+  function checkWinner(board) {
+    for (var i = 0; i < LINES.length; i++) {
+      var a = LINES[i][0], b = LINES[i][1], c = LINES[i][2];
+      if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+        return { winner: board[a], line: LINES[i] };
+      }
+    }
+    if (board.every(function (v) { return v; })) return { winner: 'draw', line: null };
+    return null;
+  }
+
+  function minimax(board, isMaximizing, depth, alpha, beta, usePruning, counter) {
+    counter.n++;
+    var result = checkWinner(board);
+    if (result) {
+      if (result.winner === 'O') return 10 - depth;
+      if (result.winner === 'X') return depth - 10;
+      return 0;
+    }
+    if (isMaximizing) {
+      var best = -Infinity;
+      for (var i = 0; i < 9; i++) {
+        if (board[i]) continue;
+        board[i] = 'O';
+        var val = minimax(board, false, depth + 1, alpha, beta, usePruning, counter);
+        board[i] = null;
+        if (val > best) best = val;
+        if (usePruning) {
+          if (best > alpha) alpha = best;
+          if (alpha >= beta) break;
+        }
+      }
+      return best;
+    }
+    var worst = Infinity;
+    for (var j = 0; j < 9; j++) {
+      if (board[j]) continue;
+      board[j] = 'X';
+      var val2 = minimax(board, true, depth + 1, alpha, beta, usePruning, counter);
+      board[j] = null;
+      if (val2 < worst) worst = val2;
+      if (usePruning) {
+        if (worst < beta) beta = worst;
+        if (alpha >= beta) break;
+      }
+    }
+    return worst;
+  }
+
+  function findBestMove(board, usePruning) {
+    var counter = { n: 0 };
+    var bestScore = -Infinity, bestMove = -1;
+    for (var i = 0; i < 9; i++) {
+      if (board[i]) continue;
+      board[i] = 'O';
+      var score = minimax(board, false, 1, -Infinity, Infinity, usePruning, counter);
+      board[i] = null;
+      if (score > bestScore) { bestScore = score; bestMove = i; }
+    }
+    return { move: bestMove, score: bestScore, nodeCount: counter.n };
+  }
+
+  function buildBoardDOM() {
+    boardEl.innerHTML = '';
+    cellEls = [];
+    for (var i = 0; i < 9; i++) {
+      var cell = document.createElement('div');
+      cell.className = 'ttt-cell';
+      cell.dataset.index = i;
+      cell.addEventListener('click', onCellClick);
+      boardEl.appendChild(cell);
+      cellEls.push(cell);
+    }
+  }
+
+  function renderBoard() {
+    for (var i = 0; i < 9; i++) {
+      var cell = cellEls[i];
+      var v = state.board[i];
+      cell.textContent = v ? v : '';
+      cell.classList.toggle('filled', !!v);
+      cell.classList.toggle('x', v === 'X');
+      cell.classList.toggle('o', v === 'O');
+      cell.classList.remove('win');
+    }
+  }
+
+  function onCellClick(e) {
+    if (state.gameOver || state.turn !== 'X') return;
+    var i = parseInt(e.currentTarget.dataset.index, 10);
+    if (state.board[i]) return;
+    state.board[i] = 'X';
+    renderBoard();
+    var result = checkWinner(state.board);
+    if (result) { endGame(result); return; }
+    state.turn = 'O';
+    turnIndicator.textContent = 'La IA está pensando…';
+    setTimeout(aiMove, 380);
+  }
+
+  function aiMove() {
+    if (state.gameOver) return;
+    var withPruning = findBestMove(state.board, true);
+    var withoutPruning = findBestMove(state.board, false);
+    var chosenMove = withPruning.move;
+    var usedRandom = false;
+    if (state.mode === 'errors' && Math.random() < 0.25) {
+      var empties = [];
+      for (var i = 0; i < 9; i++) if (!state.board[i]) empties.push(i);
+      chosenMove = empties[Math.floor(Math.random() * empties.length)];
+      usedRandom = true;
+    }
+    state.board[chosenMove] = 'O';
+    renderBoard();
+
+    nodesPrunedEl.textContent = withPruning.nodeCount;
+    nodesPlainEl.textContent = withoutPruning.nodeCount;
+    var scoreText;
+    if (withPruning.score > 0) scoreText = '+' + withPruning.score + ' (a favor de la IA)';
+    else if (withPruning.score < 0) scoreText = withPruning.score + ' (a favor tuyo)';
+    else scoreText = '0 (empate óptimo)';
+    if (usedRandom) scoreText += ' — pero jugó al azar esta vez';
+    minimaxValueEl.textContent = scoreText;
+
+    var result = checkWinner(state.board);
+    if (result) { endGame(result); return; }
+    state.turn = 'X';
+    turnIndicator.textContent = 'Tu turno — juegas X';
+  }
+
+  function endGame(result) {
+    state.gameOver = true;
+    if (result.line) {
+      result.line.forEach(function (idx) { cellEls[idx].classList.add('win'); });
+    }
+    if (result.winner === 'X') {
+      state.scores.X++;
+      resultBanner.textContent = '¡Ganaste! 🎉';
+      resultBanner.className = 'success-banner';
+      turnIndicator.textContent = 'Partida terminada';
+    } else if (result.winner === 'O') {
+      state.scores.O++;
+      resultBanner.textContent = 'Ganó la IA.';
+      resultBanner.className = 'success-banner fail';
+      turnIndicator.textContent = 'Partida terminada';
+    } else {
+      state.scores.draw++;
+      resultBanner.textContent = 'Empate — el resultado esperado contra una IA perfecta.';
+      resultBanner.className = 'success-banner';
+      turnIndicator.textContent = 'Partida terminada';
+    }
+    resultBanner.classList.remove('hidden');
+    scoreXEl.textContent = state.scores.X;
+    scoreOEl.textContent = state.scores.O;
+    scoreDrawEl.textContent = state.scores.draw;
+  }
+
+  function newGame() {
+    state.board = Array(9).fill(null);
+    state.turn = 'X';
+    state.gameOver = false;
+    renderBoard();
+    turnIndicator.textContent = 'Tu turno — juegas X';
+    resultBanner.classList.add('hidden');
+    nodesPrunedEl.textContent = '—';
+    nodesPlainEl.textContent = '—';
+    minimaxValueEl.textContent = '—';
+  }
+
+  modePerfectBtn.addEventListener('click', function () {
+    state.mode = 'perfect';
+    modePerfectBtn.classList.add('active');
+    modeErrorsBtn.classList.remove('active');
+  });
+  modeErrorsBtn.addEventListener('click', function () {
+    state.mode = 'errors';
+    modeErrorsBtn.classList.add('active');
+    modePerfectBtn.classList.remove('active');
+  });
+  newGameBtn.addEventListener('click', newGame);
+
+  buildBoardDOM();
+  renderBoard();
+})();
+</script>

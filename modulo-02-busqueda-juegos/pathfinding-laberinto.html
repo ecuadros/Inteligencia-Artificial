@@ -1,0 +1,540 @@
+---
+layout: demo
+title: "Pathfinding BFS/DFS/A* en laberinto"
+subtitle: "No basta con encontrar un camino: importa cómo lo buscaste. Explorar a ciegas y explorar con una pista del objetivo producen resultados muy distintos."
+eyebrow: "Módulo 2 · Búsqueda y Juegos"
+module: 2
+module_title: "Búsqueda y Juegos"
+prev_url: "/modulo-01-agentes/diseno-peas.html"
+prev_title: "Diseñador de PEAS interactivo"
+next_url: "/modulo-02-busqueda-juegos/minimax-tictactoe.html"
+next_title: "Minimax y poda alfa-beta en tres en línea"
+---
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#laberinto">Laberinto</a>
+  <a href="#mecanica">Cómo buscan</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>Encontrar un camino no es solo "llegar"</h2>
+  <p>
+    Un GPS, un robot de almacén o un personaje de videojuego enfrentan el mismo problema: dado un punto de
+    partida y un destino, ¿cuál es el camino a seguir? La respuesta correcta —el camino en sí— puede ser la
+    misma sin importar cómo se encontró. Pero <strong>cómo se buscó</strong> sí importa: cuánta memoria usó,
+    cuántas celdas exploró antes de encontrarlo, y si ese camino es realmente el más corto posible.
+  </p>
+  <p>
+    Vas a comparar tres estrategias de búsqueda sobre el mismo laberinto: dos que exploran <strong>a
+    ciegas</strong> (sin saber en qué dirección está el destino) y una que usa una <strong>pista</strong>
+    para orientarse.
+  </p>
+  <div class="callout">
+    <strong>Espacio de estados:</strong> cada celda del laberinto es un "estado", y moverse a una celda
+    vecina es una "acción". Buscar un camino es, en el fondo, explorar un grafo de estados hasta encontrar
+    uno que cumpla la condición de meta.
+  </div>
+</section>
+
+<section class="demo-section" id="laberinto">
+  <span class="section-kicker">// práctica</span>
+  <h2>Dibuja un laberinto y observa cómo lo exploran</h2>
+  <p>
+    Elige el modo "Pared" y arrastra sobre la cuadrícula para dibujar u borrar muros. Cambia a "Inicio" o
+    "Fin" y haz clic para mover esos puntos. Elige un algoritmo y dale play.
+  </p>
+
+  <div class="game-panel">
+    <div class="maze-wrap">
+      <div class="maze-grid-wrap">
+        <div class="demo-controls" style="margin-bottom:0.75rem;">
+          <button id="mode-wall" class="active">🧱 Pared</button>
+          <button id="mode-start">🟢 Inicio</button>
+          <button id="mode-end">🔴 Fin</button>
+          <button id="maze-random">🎲 Laberinto aleatorio</button>
+          <button id="maze-clear">↺ Limpiar paredes</button>
+        </div>
+        <div class="maze-grid" id="maze-grid"></div>
+        <div class="maze-legend">
+          <span class="maze-legend-item"><span class="maze-legend-swatch wall"></span>Pared</span>
+          <span class="maze-legend-item"><span class="maze-legend-swatch frontier"></span>Frontera</span>
+          <span class="maze-legend-item"><span class="maze-legend-swatch visited"></span>Visitado</span>
+          <span class="maze-legend-item"><span class="maze-legend-swatch path"></span>Camino final</span>
+          <span class="maze-legend-item"><span class="maze-legend-swatch start"></span>Inicio</span>
+          <span class="maze-legend-item"><span class="maze-legend-swatch end"></span>Fin</span>
+        </div>
+      </div>
+
+      <div class="vacuum-side">
+        <div class="demo-controls">
+          <select id="maze-algo">
+            <option value="bfs">BFS (anchura)</option>
+            <option value="dfs">DFS (profundidad)</option>
+            <option value="astar">A* (con heurística)</option>
+          </select>
+          <button id="maze-toggle" class="primary">▶ Iniciar</button>
+          <button id="maze-step">⏭ Paso</button>
+          <button id="maze-reset">↺ Reiniciar</button>
+        </div>
+        <div class="demo-speed">
+          <span>Velocidad</span>
+          <input type="range" id="maze-speed" min="10" max="200" value="60" step="10" />
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-value" id="stat-explored">0</div><div class="stat-label">Nodos explorados</div></div>
+          <div class="stat-box"><div class="stat-value" id="stat-pathlen">—</div><div class="stat-label">Long. del camino</div></div>
+          <div class="stat-box"><div class="stat-value" id="stat-optimal">—</div><div class="stat-label">¿Óptimo?</div></div>
+        </div>
+
+        <div class="success-banner hidden" id="maze-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-primary" id="maze-compare">Comparar los 3 algoritmos en este laberinto</button>
+  <div class="compare-panel hidden" id="compare-panel">
+    <div class="compare-bar-row">
+      <span class="compare-bar-label">BFS</span>
+      <div class="compare-bar-track"><div class="compare-bar-fill bfs" id="compare-bfs-fill" style="width:0%"></div></div>
+      <span class="compare-bar-value" id="compare-bfs-value">—</span>
+    </div>
+    <div class="compare-bar-row">
+      <span class="compare-bar-label">DFS</span>
+      <div class="compare-bar-track"><div class="compare-bar-fill dfs" id="compare-dfs-fill" style="width:0%"></div></div>
+      <span class="compare-bar-value" id="compare-dfs-value">—</span>
+    </div>
+    <div class="compare-bar-row">
+      <span class="compare-bar-label">A*</span>
+      <div class="compare-bar-track"><div class="compare-bar-fill astar" id="compare-astar-fill" style="width:0%"></div></div>
+      <span class="compare-bar-value" id="compare-astar-value">—</span>
+    </div>
+    <p class="reveal-hint" id="compare-summary"></p>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>Tres formas distintas de explorar el mismo espacio</h2>
+  <p>
+    <strong>BFS (anchura):</strong> usa una <em>cola</em> (FIFO). Explora todos los vecinos a distancia 1,
+    luego todos a distancia 2, y así — como ondas que se expanden desde el inicio. Nunca se "adelanta" a
+    explorar lejos sin haber cubierto lo cercano primero.
+  </p>
+  <p>
+    <strong>DFS (profundidad):</strong> usa una <em>pila</em> (LIFO). Se lanza por un camino hasta el fondo
+    antes de retroceder a probar otro. Puede encontrar una solución rapidísimo — o perder mucho tiempo
+    explorando un callejón sin salida antes de retroceder.
+  </p>
+  <p>
+    <strong>A* (con heurística):</strong> usa una <em>cola de prioridad</em> ordenada por
+    <code>f = g + h</code>, donde <code>g</code> es el costo real recorrido hasta ese nodo y
+    <code>h</code> es una estimación de lo que falta (aquí, la distancia Manhattan hasta la meta). En vez de
+    explorar a ciegas, prioriza los nodos que <em>parecen</em> más prometedores.
+  </p>
+  <div class="callout accent2">
+    <strong>Heurística admisible:</strong> la distancia Manhattan nunca <em>sobreestima</em> los pasos reales
+    que faltan en una cuadrícula de 4 direcciones (el camino real nunca puede ser más corto que esa
+    distancia en línea recta por bloques). Por eso A* sigue garantizando el camino más corto — la heurística
+    solo lo hace llegar ahí explorando menos nodos.
+  </div>
+  <p>
+    En una cuadrícula donde cada paso cuesta lo mismo, tanto BFS como A* (con heurística admisible)
+    <strong>garantizan el camino más corto</strong>. DFS no lo garantiza: puede devolver un camino válido
+    pero innecesariamente largo.
+  </p>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>¿Por qué DFS a veces encuentra el camino casi al instante y otras veces explora casi todo el laberinto antes de lograrlo?</li>
+    <li>Si el laberinto no tuviera paredes internas en absoluto, ¿esperarías que BFS y A* exploraran una cantidad de nodos muy distinta? ¿Por qué?</li>
+    <li>¿En qué situación preferirías BFS sobre A*, aunque A* suele explorar menos nodos?</li>
+    <li>Si la heurística de A* <em>sobreestimara</em> la distancia real (por ejemplo, si hubiera teletransportes que la distancia Manhattan no puede prever), ¿seguiría garantizando el camino más corto? ¿Por qué sí o por qué no?</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  var ROWS = 10, COLS = 14;
+
+  var state = {
+    walls: [],
+    start: { r: 1, c: 1 },
+    end: { r: ROWS - 2, c: COLS - 2 },
+    mode: 'wall',
+    painting: false,
+    paintValue: true,
+    algo: 'bfs',
+    events: [],
+    eventIndex: 0,
+    running: false,
+    timer: null,
+    finished: false,
+    path: null,
+    visitedCount: 0
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  var gridEl = $('maze-grid');
+  var algoSelect = $('maze-algo');
+  var toggleBtn = $('maze-toggle');
+  var stepBtn = $('maze-step');
+  var resetBtn = $('maze-reset');
+  var speedSlider = $('maze-speed');
+  var modeWallBtn = $('mode-wall');
+  var modeStartBtn = $('mode-start');
+  var modeEndBtn = $('mode-end');
+  var randomBtn = $('maze-random');
+  var clearBtn = $('maze-clear');
+  var compareBtn = $('maze-compare');
+  var comparePanel = $('compare-panel');
+  var resultBanner = $('maze-result');
+  var statExplored = $('stat-explored');
+  var statPathLen = $('stat-pathlen');
+  var statOptimal = $('stat-optimal');
+  var cellEls = [];
+
+  function makeEmptyWalls() {
+    var g = [];
+    for (var r = 0; r < ROWS; r++) {
+      var row = [];
+      for (var c = 0; c < COLS; c++) row.push(false);
+      g.push(row);
+    }
+    return g;
+  }
+
+  function key(n) { return n.r + ',' + n.c; }
+  function sameCell(a, b) { return a.r === b.r && a.c === b.c; }
+
+  function neighbors4(node) {
+    var out = [];
+    if (node.r > 0) out.push({ r: node.r - 1, c: node.c });
+    if (node.r < ROWS - 1) out.push({ r: node.r + 1, c: node.c });
+    if (node.c > 0) out.push({ r: node.r, c: node.c - 1 });
+    if (node.c < COLS - 1) out.push({ r: node.r, c: node.c + 1 });
+    return out;
+  }
+
+  function isWall(walls, r, c) { return walls[r][c]; }
+
+  function runSearch(algo, walls, start, end) {
+    var events = [];
+    var cameFrom = {};
+    var visited = {};
+    visited[key(start)] = true;
+
+    if (algo === 'bfs' || algo === 'dfs') {
+      var frontier = [start];
+      events.push({ type: 'frontier', r: start.r, c: start.c });
+      while (frontier.length) {
+        var current = algo === 'bfs' ? frontier.shift() : frontier.pop();
+        events.push({ type: 'visit', r: current.r, c: current.c });
+        if (sameCell(current, end)) break;
+        var neigh = neighbors4(current);
+        for (var i = 0; i < neigh.length; i++) {
+          var n = neigh[i];
+          if (isWall(walls, n.r, n.c)) continue;
+          if (visited[key(n)]) continue;
+          visited[key(n)] = true;
+          cameFrom[key(n)] = current;
+          frontier.push(n);
+          events.push({ type: 'frontier', r: n.r, c: n.c });
+        }
+      }
+    } else {
+      var h = function (n) { return Math.abs(n.r - end.r) + Math.abs(n.c - end.c); };
+      var gScore = {};
+      gScore[key(start)] = 0;
+      var closed = {};
+      var open = [{ node: start, f: h(start) }];
+      events.push({ type: 'frontier', r: start.r, c: start.c });
+      while (open.length) {
+        open.sort(function (a, b) { return a.f - b.f; });
+        var top = open.shift();
+        var cur = top.node;
+        if (closed[key(cur)]) continue;
+        closed[key(cur)] = true;
+        visited[key(cur)] = true;
+        events.push({ type: 'visit', r: cur.r, c: cur.c });
+        if (sameCell(cur, end)) break;
+        var nb = neighbors4(cur);
+        for (var j = 0; j < nb.length; j++) {
+          var m = nb[j];
+          if (isWall(walls, m.r, m.c)) continue;
+          if (closed[key(m)]) continue;
+          var tentative = gScore[key(cur)] + 1;
+          if (gScore[key(m)] === undefined || tentative < gScore[key(m)]) {
+            gScore[key(m)] = tentative;
+            cameFrom[key(m)] = cur;
+            open.push({ node: m, f: tentative + h(m) });
+            events.push({ type: 'frontier', r: m.r, c: m.c });
+          }
+        }
+      }
+    }
+
+    var found = sameCell(start, end) || !!cameFrom[key(end)];
+    var path = [];
+    if (found) {
+      var walker = end;
+      path.push(walker);
+      while (!sameCell(walker, start)) {
+        walker = cameFrom[key(walker)];
+        if (!walker) { found = false; path = []; break; }
+        path.push(walker);
+      }
+      path.reverse();
+    }
+    var visitedCount = 0;
+    for (var k in visited) visitedCount++;
+    return { events: events, path: found ? path : null, visitedCount: visitedCount, found: found };
+  }
+
+  function isReachable(walls, start, end) {
+    var visited = {};
+    visited[key(start)] = true;
+    var queue = [start];
+    while (queue.length) {
+      var cur = queue.shift();
+      if (sameCell(cur, end)) return true;
+      var nb = neighbors4(cur);
+      for (var i = 0; i < nb.length; i++) {
+        var n = nb[i];
+        if (isWall(walls, n.r, n.c)) continue;
+        if (visited[key(n)]) continue;
+        visited[key(n)] = true;
+        queue.push(n);
+      }
+    }
+    return false;
+  }
+
+  function buildGridDOM() {
+    gridEl.innerHTML = '';
+    gridEl.style.gridTemplateColumns = 'repeat(' + COLS + ', 28px)';
+    cellEls = [];
+    for (var r = 0; r < ROWS; r++) {
+      var rowEls = [];
+      for (var c = 0; c < COLS; c++) {
+        var cell = document.createElement('div');
+        cell.className = 'maze-cell';
+        cell.dataset.row = r; cell.dataset.col = c;
+        cell.addEventListener('mousedown', function (e) { onCellDown(e); });
+        cell.addEventListener('mouseenter', function (e) { onCellEnter(e); });
+        gridEl.appendChild(cell);
+        rowEls.push(cell);
+      }
+      cellEls.push(rowEls);
+    }
+    document.addEventListener('mouseup', function () { state.painting = false; });
+  }
+
+  function cellCoords(e) {
+    var el = e.currentTarget;
+    return { r: parseInt(el.dataset.row, 10), c: parseInt(el.dataset.col, 10) };
+  }
+
+  function onCellDown(e) {
+    var pos = cellCoords(e);
+    if (state.mode === 'wall') {
+      if (sameCell(pos, state.start) || sameCell(pos, state.end)) return;
+      state.paintValue = !state.walls[pos.r][pos.c];
+      state.walls[pos.r][pos.c] = state.paintValue;
+      state.painting = true;
+      renderMaze();
+      clearSearchVisuals();
+    } else if (state.mode === 'start') {
+      if (sameCell(pos, state.end)) return;
+      state.walls[pos.r][pos.c] = false;
+      state.start = pos;
+      renderMaze();
+      clearSearchVisuals();
+    } else if (state.mode === 'end') {
+      if (sameCell(pos, state.start)) return;
+      state.walls[pos.r][pos.c] = false;
+      state.end = pos;
+      renderMaze();
+      clearSearchVisuals();
+    }
+  }
+
+  function onCellEnter(e) {
+    if (!state.painting || state.mode !== 'wall') return;
+    var pos = cellCoords(e);
+    if (sameCell(pos, state.start) || sameCell(pos, state.end)) return;
+    state.walls[pos.r][pos.c] = state.paintValue;
+    renderMaze();
+    clearSearchVisuals();
+  }
+
+  function renderMaze() {
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        var cell = cellEls[r][c];
+        cell.classList.toggle('wall', state.walls[r][c]);
+        cell.classList.toggle('start', state.start.r === r && state.start.c === c);
+        cell.classList.toggle('end', state.end.r === r && state.end.c === c);
+      }
+    }
+  }
+
+  function clearSearchVisuals() {
+    stopRunning();
+    state.events = []; state.eventIndex = 0; state.finished = false; state.path = null; state.visitedCount = 0; state.visitedSoFar = 0;
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        cellEls[r][c].classList.remove('frontier', 'visited', 'path');
+      }
+    }
+    resultBanner.classList.add('hidden');
+    statExplored.textContent = '0';
+    statPathLen.textContent = '—';
+    statOptimal.textContent = '—';
+  }
+
+  function ensureEvents() {
+    if (state.events.length === 0) {
+      var result = runSearch(state.algo, state.walls, state.start, state.end);
+      state.events = result.events;
+      state.path = result.path;
+      state.visitedCount = result.visitedCount;
+    }
+  }
+
+  function applyEvent(ev) {
+    var cell = cellEls[ev.r][ev.c];
+    if (sameCell({ r: ev.r, c: ev.c }, state.start) || sameCell({ r: ev.r, c: ev.c }, state.end)) return;
+    if (ev.type === 'frontier') cell.classList.add('frontier');
+    else if (ev.type === 'visit') { cell.classList.remove('frontier'); cell.classList.add('visited'); }
+  }
+
+  function finishRun() {
+    stopRunning();
+    state.finished = true;
+    statExplored.textContent = state.visitedCount;
+    var optimalAlgos = { bfs: true, dfs: false, astar: true };
+    if (state.path) {
+      state.path.forEach(function (p) {
+        if (!sameCell(p, state.start) && !sameCell(p, state.end)) {
+          cellEls[p.r][p.c].classList.add('path');
+        }
+      });
+      statPathLen.textContent = (state.path.length - 1);
+      statOptimal.textContent = optimalAlgos[state.algo] ? 'Sí' : 'No';
+      resultBanner.textContent = '¡Camino encontrado! ' + (state.path.length - 1) + ' pasos, ' + state.visitedCount + ' nodos explorados.';
+      resultBanner.className = 'success-banner';
+    } else {
+      statPathLen.textContent = 'sin solución';
+      statOptimal.textContent = '—';
+      resultBanner.textContent = 'No existe camino entre inicio y fin con las paredes actuales.';
+      resultBanner.className = 'success-banner fail';
+    }
+    resultBanner.classList.remove('hidden');
+  }
+
+  function stepOnce() {
+    if (state.finished) return;
+    ensureEvents();
+    if (state.eventIndex >= state.events.length) { finishRun(); return; }
+    var ev = state.events[state.eventIndex];
+    applyEvent(ev);
+    if (ev.type === 'visit') { state.visitedSoFar++; statExplored.textContent = state.visitedSoFar; }
+    state.eventIndex++;
+    if (state.eventIndex >= state.events.length) finishRun();
+  }
+
+  function startRunning() {
+    if (state.finished) return;
+    state.running = true;
+    toggleBtn.textContent = '⏸ Pausar';
+    var delay = 220 - parseInt(speedSlider.value, 10);
+    state.timer = setInterval(stepOnce, Math.max(delay, 10));
+  }
+
+  function stopRunning() {
+    state.running = false;
+    toggleBtn.textContent = '▶ Iniciar';
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  }
+
+  function setMode(mode) {
+    state.mode = mode;
+    modeWallBtn.classList.toggle('active', mode === 'wall');
+    modeStartBtn.classList.toggle('active', mode === 'start');
+    modeEndBtn.classList.toggle('active', mode === 'end');
+  }
+
+  toggleBtn.addEventListener('click', function () {
+    if (state.running) stopRunning(); else startRunning();
+  });
+  stepBtn.addEventListener('click', function () { if (!state.running) stepOnce(); });
+  resetBtn.addEventListener('click', clearSearchVisuals);
+  algoSelect.addEventListener('change', function () {
+    state.algo = algoSelect.value;
+    clearSearchVisuals();
+  });
+  modeWallBtn.addEventListener('click', function () { setMode('wall'); });
+  modeStartBtn.addEventListener('click', function () { setMode('start'); });
+  modeEndBtn.addEventListener('click', function () { setMode('end'); });
+
+  randomBtn.addEventListener('click', function () {
+    var attempts = 0, ok = false, walls;
+    while (attempts < 40 && !ok) {
+      walls = makeEmptyWalls();
+      for (var r = 0; r < ROWS; r++) {
+        for (var c = 0; c < COLS; c++) {
+          if (sameCell({ r: r, c: c }, state.start) || sameCell({ r: r, c: c }, state.end)) continue;
+          walls[r][c] = Math.random() < 0.28;
+        }
+      }
+      if (isReachable(walls, state.start, state.end)) ok = true;
+      attempts++;
+    }
+    state.walls = ok ? walls : makeEmptyWalls();
+    renderMaze();
+    clearSearchVisuals();
+  });
+
+  clearBtn.addEventListener('click', function () {
+    state.walls = makeEmptyWalls();
+    renderMaze();
+    clearSearchVisuals();
+  });
+
+  compareBtn.addEventListener('click', function () {
+    var algos = ['bfs', 'dfs', 'astar'];
+    var results = {};
+    algos.forEach(function (a) { results[a] = runSearch(a, state.walls, state.start, state.end); });
+    var maxVal = Math.max(results.bfs.visitedCount, results.dfs.visitedCount, results.astar.visitedCount, 1);
+    comparePanel.classList.remove('hidden');
+    algos.forEach(function (a) {
+      var pct = (results[a].visitedCount / maxVal * 100);
+      $('compare-' + a + '-fill').style.width = pct + '%';
+      var len = results[a].found ? (results[a].path.length - 1) + ' pasos' : 'sin solución';
+      $('compare-' + a + '-value').textContent = results[a].visitedCount + ' nodos · ' + len;
+    });
+    var bfsLen = results.bfs.found ? results.bfs.path.length - 1 : null;
+    var astarLen = results.astar.found ? results.astar.path.length - 1 : null;
+    var dfsLen = results.dfs.found ? results.dfs.path.length - 1 : null;
+    var summary = 'Sobre este laberinto: BFS exploró ' + results.bfs.visitedCount + ' nodos, DFS ' + results.dfs.visitedCount + ', y A* ' + results.astar.visitedCount + '.';
+    if (bfsLen !== null && astarLen !== null) {
+      summary += ' BFS y A* encontraron el mismo camino óptimo de ' + bfsLen + ' pasos' + (dfsLen !== null && dfsLen !== bfsLen ? (', mientras que DFS encontró uno de ' + dfsLen + ' pasos (no necesariamente el más corto).') : '.');
+    }
+    $('compare-summary').textContent = summary;
+  });
+
+  buildGridDOM();
+  renderMaze();
+  clearSearchVisuals();
+})();
+</script>
