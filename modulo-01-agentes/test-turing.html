@@ -1,0 +1,562 @@
+---
+layout: demo
+title: "Test de Turing jugable"
+subtitle: "¿Cómo sabemos si una máquina piensa? Alan Turing propuso no responder esa pregunta directamente, sino jugar un juego."
+eyebrow: "Módulo 1 · Agentes Inteligentes"
+module: 1
+module_title: "Agentes Inteligentes"
+---
+
+<nav class="demo-toc">
+  <a href="#concepto">El problema</a>
+  <a href="#juego">Juega</a>
+  <a href="#historia">Historia</a>
+  <a href="#criticas">Críticas</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="concepto">
+  <span class="section-kicker">// el problema</span>
+  <h2>Una pregunta que no se puede responder directamente</h2>
+  <p>
+    En 1950, el matemático <strong>Alan Turing</strong> se enfrentó a una pregunta de ingeniería y filosofía
+    a la vez: <em>"¿pueden pensar las máquinas?"</em>. El problema es que nadie se pone de acuerdo en qué
+    significa "pensar". En lugar de intentar definirlo, Turing propuso algo mucho más práctico:
+    reemplazar la pregunta por un <strong>juego que sí se puede jugar y medir</strong>.
+  </p>
+  <p>
+    Lo llamó el <strong>"juego de la imitación"</strong>. Un juez conversa por escrito, en paralelo, con dos
+    interlocutores ocultos: uno es una persona, el otro es una máquina. El juez no ve ni escucha a
+    ninguno de los dos — solo puede leer y escribir texto. Tras un rato de conversación, debe decidir
+    cuál de los dos es la máquina. Si el juez se equivoca con la misma frecuencia con la que acertaría
+    al azar, decimos que la máquina <strong>"pasó" el test</strong>.
+  </p>
+
+  <div class="turing-diagram">
+    <div class="diagram-box">🧑‍⚖️<span class="diagram-box-label">Juez (tú)</span></div>
+    <div class="diagram-links">↕ solo texto ↕</div>
+    <div class="diagram-pair">
+      <div class="diagram-box">💬<span class="diagram-box-label">Interlocutor A</span></div>
+      <div class="diagram-box">💬<span class="diagram-box-label">Interlocutor B</span></div>
+    </div>
+  </div>
+  <p class="diagram-caption">
+    Uno de los dos es humano, el otro es una máquina — y no sabes cuál es cuál. Solo puedes conversar
+    por texto con ambos y, al final, debes adivinar.
+  </p>
+
+  <div class="callout">
+    <strong>Por qué solo texto:</strong> Turing eliminó a propósito la voz, la apariencia y la escritura a
+    mano — cualquier pista que delatara al instante quién es la máquina. Quería aislar una sola
+    capacidad: <strong>sostener una conversación</strong>. Abajo vas a notar que incluso el tiempo de
+    respuesta puede filtrar información — algo que el propio formato de texto no logra eliminar del todo.
+  </div>
+</section>
+
+<section class="demo-section" id="juego">
+  <span class="section-kicker">// práctica</span>
+  <h2>Ponte en el rol del juez</h2>
+  <p>
+    Vas a jugar <strong>3 rondas</strong>. En cada una, hay un Interlocutor A y un Interlocutor B: uno es
+    una simulación de humano, el otro es un chatbot. El mismo mensaje que escribas se envía a ambos al
+    mismo tiempo. La dificultad para detectar a la máquina aumenta en cada ronda — así como ha ido
+    aumentando en la vida real desde 1950 hasta hoy.
+  </p>
+
+  <details class="info-toggle">
+    <summary>¿Cómo se juega?</summary>
+    <div class="toggle-body">
+      <ul>
+        <li>Escribe cualquier pregunta o comentario — se envía a A y a B a la vez.</li>
+        <li>Necesitas enviar al menos 2 mensajes antes de poder adivinar.</li>
+        <li>Cuando estés listo, pulsa "Creo que A/B es la máquina" debajo del panel correspondiente.</li>
+        <li>Al adivinar se revela quién era quién, con una pista de qué delató a la máquina.</li>
+        <li>Son 3 rondas. Al final verás tu puntaje como juez.</li>
+      </ul>
+      <p style="margin-top:0.6rem;">
+        Nota: ninguno de los dos interlocutores es una persona real ni una IA conectada a un servidor —
+        todo corre simulado en tu navegador, sin backend.
+      </p>
+    </div>
+  </details>
+
+  <div class="game-panel">
+    <div class="game-status-bar">
+      <div class="game-status-left">
+        <span class="round-badge" id="round-badge">Ronda 1/3</span>
+        <span class="difficulty-badge facil" id="difficulty-badge">Fácil</span>
+      </div>
+      <span class="score-display">Aciertos: <strong id="score-display">0</strong>/3</span>
+    </div>
+
+    <div id="game-play-area">
+      <div class="turing-arena">
+        <div class="turing-panel" id="panel-a">
+          <div class="turing-panel-header">
+            <div class="panel-label"><span class="panel-letter">A</span> Interlocutor A</div>
+            <span class="identity-tag" id="tag-a"></span>
+          </div>
+          <div class="panel-messages" id="messages-a"></div>
+          <div class="turing-panel-footer">
+            <button class="guess-btn" id="guess-a" disabled>Creo que A es la máquina</button>
+          </div>
+        </div>
+
+        <div class="turing-panel" id="panel-b">
+          <div class="turing-panel-header">
+            <div class="panel-label"><span class="panel-letter">B</span> Interlocutor B</div>
+            <span class="identity-tag" id="tag-b"></span>
+          </div>
+          <div class="panel-messages" id="messages-b"></div>
+          <div class="turing-panel-footer">
+            <button class="guess-btn" id="guess-b" disabled>Creo que B es la máquina</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-input-row">
+        <input type="text" id="game-input" placeholder="Escribe una pregunta para A y B..." maxlength="200" autocomplete="off" />
+        <button id="game-send">Enviar</button>
+      </div>
+      <p class="game-hint" id="game-hint">Envía al menos 2 mensajes antes de poder adivinar.</p>
+
+      <div class="reveal-panel hidden" id="reveal-panel">
+        <div class="reveal-banner" id="reveal-banner"></div>
+        <p class="reveal-hint" id="reveal-hint"></p>
+        <div class="reveal-actions">
+          <button class="btn-primary" id="next-round-btn">Siguiente ronda →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="final-summary hidden" id="final-summary">
+      <div class="final-score" id="final-score">0/3</div>
+      <div class="final-message" id="final-message"></div>
+      <p class="final-sub">
+        Baja para leer sobre la historia real del test de Turing, sus críticas y preguntas para
+        debatir en clase.
+      </p>
+      <button class="btn-primary" id="replay-btn">Jugar de nuevo</button>
+    </div>
+  </div>
+</section>
+
+<section class="demo-section" id="historia">
+  <span class="section-kicker">// contexto histórico</span>
+  <h2>De ELIZA a los LLM de hoy</h2>
+  <p>
+    El juego que acabas de jugar no es solo un ejercicio de clase: reproduce, en miniatura, 70 años de
+    intentos reales por construir máquinas capaces de "pasar" como humanas.
+  </p>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-year">1950</div>
+      <div class="timeline-title">Turing propone el juego</div>
+      <div class="timeline-desc">"Computing Machinery and Intelligence" reemplaza "¿pueden pensar las máquinas?" por el juego de la imitación.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">1966</div>
+      <div class="timeline-title">ELIZA</div>
+      <div class="timeline-desc">Joseph Weizenbaum crea un chatbot de reglas que refleja las frases del usuario. Muchos creyeron que "entendía".</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">1972</div>
+      <div class="timeline-title">PARRY</div>
+      <div class="timeline-desc">Simula a un paciente con esquizofrenia paranoide. En pruebas ciegas, psiquiatras no lo distinguieron de pacientes reales.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">1990–2019</div>
+      <div class="timeline-title">Premio Loebner</div>
+      <div class="timeline-desc">Competencia anual de chatbots basada directamente en el test de Turing, con jueces humanos reales.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2014</div>
+      <div class="timeline-title">Eugene Goostman</div>
+      <div class="timeline-desc">Un chatbot que simulaba ser un adolescente ucraniano de 13 años convenció al 33% de los jueces — resultado muy debatido.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-year">2020s</div>
+      <div class="timeline-title">Modelos de lenguaje (LLM)</div>
+      <div class="timeline-desc">GPT, Claude y otros conversan con tanta fluidez que el test de Turing "casual" dejó de ser un desafío serio.</div>
+    </div>
+  </div>
+</section>
+
+<section class="demo-section" id="criticas">
+  <span class="section-kicker">// pensamiento crítico</span>
+  <h2>¿Pasar el test significa "pensar"?</h2>
+  <p>
+    Desde que se propuso, el test de Turing ha sido tan influyente como criticado. La objeción más
+    famosa viene del filósofo <strong>John Searle</strong>.
+  </p>
+
+  <h3>La habitación china (Searle, 1980)</h3>
+  <div class="callout accent2">
+    Imagina a una persona encerrada en una habitación, que no habla chino, pero tiene un libro de
+    reglas gigantesco: para cada símbolo chino que recibe por debajo de la puerta, el libro le dice
+    exactamente qué símbolo devolver. Desde afuera, las respuestas son perfectas — parece que la
+    habitación "entiende" chino. Pero la persona adentro no entiende una sola palabra: solo sigue
+    reglas mecánicamente. <strong>Searle argumenta que esto es exactamente lo que hace un programa:
+    manipula símbolos según reglas, sin comprender su significado.</strong> Pasar el test de Turing
+    probaría que algo <em>imita</em> muy bien la conversación — no que <em>entiende</em> nada.
+  </div>
+
+  <h3>Otras críticas comunes</h3>
+  <p>
+    <strong>Sesgo antropocéntrico:</strong> el test asume que "parecer humano" es la mejor medida de
+    inteligencia. Pero una calculadora, un buscador o un sistema de diagnóstico médico pueden ser muy
+    inteligentes en su tarea sin sonar humanos en absoluto.
+  </p>
+  <p>
+    <strong>Es gameable:</strong> como viste en la ronda difícil, una máquina puede "hacer trampa" con
+    trucos conversacionales (evadir preguntas, fingir errores de tipeo, dar respuestas vagas) sin
+    razonar de verdad — y aun así engañar al juez.
+  </p>
+  <p>
+    <strong>Mide imitación, no capacidad:</strong> el test no evalúa percepción, razonamiento bajo
+    incertidumbre, planificación física, ni ninguna otra forma de inteligencia que no se exprese como
+    charla casual en texto.
+  </p>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>Si una IA pasa el test de Turing de forma consistente, ¿significa que "piensa"? ¿Por qué sí o por qué no?</li>
+    <li>¿El test mide inteligencia general, o solo la capacidad de imitar el estilo conversacional humano?</li>
+    <li>Los LLM actuales (GPT, Claude) conversan con muchísima fluidez. ¿Debería rediseñarse el test de Turing para la era de los modelos de lenguaje? ¿Cómo sería una versión más exigente?</li>
+    <li>¿Qué diferencia real hay entre "entender" una conversación y "predecir la siguiente palabra" de forma extremadamente convincente?</li>
+    <li>En el juego, ¿qué pistas usaste para detectar a la máquina? ¿Esas mismas pistas seguirían funcionando contra un chatbot mucho más avanzado?</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- Utilidades ---------- */
+
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function injectTypos(text, rate) {
+    if (!rate) return text;
+    return text.split(' ').map(function (word) {
+      if (word.length > 3 && Math.random() < rate) {
+        var i = 1 + Math.floor(Math.random() * (word.length - 2));
+        return word.slice(0, i) + word[i + 1] + word[i] + word.slice(i + 2);
+      }
+      return word;
+    }).join(' ');
+  }
+
+  var MATH_RE = /(\d+)\s*([+\-xX*])\s*(\d+)/;
+
+  function mathAnswer(text) {
+    var m = text.match(MATH_RE);
+    if (!m) return null;
+    var a = parseInt(m[1], 10), b = parseInt(m[3], 10), op = m[2];
+    if (op === '+') return a + b;
+    if (op === '-') return a - b;
+    return a * b;
+  }
+
+  function matchRules(persona, text) {
+    for (var i = 0; i < persona.rules.length; i++) {
+      var rule = persona.rules[i];
+      if (rule.test.test(text)) {
+        return rule.dynamic ? rule.dynamic(text) : pick(rule.replies);
+      }
+    }
+    return pick(persona.fallback);
+  }
+
+  /* ---------- Motor estilo ELIZA (ronda 2, máquina) ---------- */
+
+  var ELIZA_RULES = [
+    { test: /madre|padre|mam[aá]|pap[aá]|familia/i, replies: ["Cuéntame más sobre tu familia.", "¿Qué relación tienes con tu familia?"] },
+    { test: /triste|deprimid|angustiad/i, replies: ["Lamento que te sientas así. ¿Por qué crees que te sientes así?", "¿Desde cuándo te sientes así?"] },
+    { test: /sue[ñn]o|sue[ñn]a/i, replies: ["¿Qué crees que significa ese sueño?", "Los sueños son interesantes. Cuéntame más."] },
+    { test: /computador|m[aá]quina|robot|inteligencia artificial|\bIA\b/i, replies: ["¿Por qué te interesan las máquinas?", "¿Confías en las máquinas?"] },
+    { test: /siempre|nunca/i, replies: ["¿Puedes darme un ejemplo específico?", "¿En serio, siempre? Cuéntame más."] },
+    { test: /perd[oó]n|lo siento/i, replies: ["No hace falta que te disculpes. Continúa."] },
+    { test: /porque|por qu[eé]/i, replies: ["¿Esa es la razón principal?", "¿Qué te hace pensar eso?"] }
+  ];
+
+  function reflect(text) {
+    var map = { "soy": "eres", "estoy": "estás", "mi": "tu", "mis": "tus", "yo": "tú", "tengo": "tienes", "quiero": "quieres", "siento": "sientes", "era": "eras", "tú": "yo", "tu": "mi", "tus": "mis", "eres": "soy", "tienes": "tengo" };
+    return text.toLowerCase().split(/\s+/).map(function (w) { return map[w] || w; }).join(' ');
+  }
+
+  function elizaReply(text) {
+    for (var i = 0; i < ELIZA_RULES.length; i++) {
+      if (ELIZA_RULES[i].test.test(text)) return pick(ELIZA_RULES[i].replies);
+    }
+    var clean = text.replace(/[¿?¡!.]/g, '').trim();
+    if (clean.length > 2 && Math.random() < 0.7) {
+      return "¿Por qué dices que " + reflect(clean) + "?";
+    }
+    return pick(["Cuéntame más sobre eso.", "Entiendo. ¿Y qué más?", "Sigue, te escucho.", "Interesante. Continúa."]);
+  }
+
+  /* ---------- Rondas ---------- */
+
+  var ROUNDS = [
+    {
+      title: "Chatbot de reglas",
+      difficulty: "facil",
+      difficultyLabel: "Fácil",
+      hint: "La máquina respondía casi al instante, con frases rígidas y formales (\"protocolo\", \"dato no disponible\") y evitaba cualquier pregunta sobre emociones. Ese patrón mecánico es la firma de los primeros chatbots basados en reglas.",
+      machine: {
+        delay: [200, 500], typoRate: 0,
+        rules: [
+          { test: /hola|buenas|hey|qu[eé] tal/i, replies: ["Saludo recibido. Sistema listo para conversar."] },
+          { test: MATH_RE, replies: ["No estoy autorizado a realizar cálculos en este módulo."] },
+          { test: /c[oó]mo est[aá]s/i, replies: ["Mi estado operativo es óptimo."] },
+          { test: /tu nombre|c[oó]mo te llamas|qui[eé]n eres/i, replies: ["Soy una instancia de conversación automatizada."] },
+          { test: /a[ñn]os|edad/i, replies: ["Ese dato no está disponible en mi base de conocimiento."] },
+          { test: /sientes|feliz|triste|emoci/i, replies: ["No proceso estados emocionales."] },
+          { test: /chiste|broma/i, replies: ["Solicitud no reconocida: 'chiste' no está en mi base de datos."] }
+        ],
+        fallback: ["Por favor, reformule su consulta.", "Dato no disponible.", "Continúe, estoy procesando su entrada."]
+      },
+      human: {
+        delay: [900, 2600], typoRate: 0.08,
+        rules: [
+          { test: /hola|buenas|hey|qu[eé] tal/i, replies: ["hola! 🙂 todo bien?", "eyy q tal", "buenas! aca aburrido en clase jsjs"] },
+          { test: MATH_RE, dynamic: function (t) { return mathAnswer(t) + ", fácil jaja"; } },
+          { test: /c[oó]mo est[aá]s/i, replies: ["bien, un poco cansada la verdad", "más o menos, dormí re poco", "todo tranqui, y vos?"] },
+          { test: /tu nombre|c[oó]mo te llamas|qui[eé]n eres/i, replies: ["jaja para qué querés saber", "eso no te lo digo todavía 😏", "prefiero no decirlo aca"] },
+          { test: /a[ñn]os|edad/i, replies: ["tengo 21", "22 recién cumplidos", "ya soy grande jaja, 24"] },
+          { test: /sientes|feliz|triste|emoci/i, replies: ["sí, hoy ando bien de ánimo", "un poco estresada por los exámenes la verdad", "feliz, hace sol y eso ayuda"] },
+          { test: /chiste|broma/i, replies: ["¿qué le dice un pez a otro? nada 🐟 jaja malísimo lo sé", "no se me ocurre ninguno ahora, perdón"] }
+        ],
+        fallback: ["jaja no sé qué decir a eso", "mmm buena pregunta, dejame pensar...", "ni idea la verdad 😅", "por qué preguntas eso?"]
+      }
+    },
+    {
+      title: "Estilo ELIZA (1966)",
+      difficulty: "medio",
+      difficultyLabel: "Medio",
+      hint: "La máquina imitaba a ELIZA (1966): en vez de responder, te devolvía la pregunta (\"¿Por qué dices que...?\"). Es una técnica de reflejo — nunca dio un dato personal concreto (edad, nombre, ciudad), porque en realidad no sabe nada: solo reordena tus propias palabras.",
+      machine: { mode: "eliza", delay: [500, 1200], typoRate: 0 },
+      human: {
+        delay: [900, 2500], typoRate: 0.07,
+        rules: [
+          { test: /hola|buenas|hey|qu[eé] tal/i, replies: ["hola! qué tal", "hey, buenas 🙂"] },
+          { test: MATH_RE, dynamic: function (t) { return "eh... " + mathAnswer(t) + ", creo jaja"; } },
+          { test: /c[oó]mo est[aá]s/i, replies: ["bien, ¿y vos?", "tranqui, con sueño jaja"] },
+          { test: /tu nombre|c[oó]mo te llamas|qui[eé]n eres/i, replies: ["me dicen Ana", "soy Ana, un gusto"] },
+          { test: /a[ñn]os|edad/i, replies: ["tengo 23"] },
+          { test: /vives|ciudad|de d[oó]nde/i, replies: ["vivo en Lima", "soy de Lima"] },
+          { test: /sientes|feliz|triste|emoci/i, replies: ["sí, ando bien la verdad", "un poco cansada nomás"] },
+          { test: /chiste|broma/i, replies: ["jaja no se me ocurre ninguno ahora", "no soy buena contando chistes jaja"] }
+        ],
+        fallback: ["jaja no sé, ¿por qué preguntas eso?", "mmm, dejame pensarlo", "ni idea la verdad"]
+      }
+    },
+    {
+      title: "Persona simulada avanzada",
+      difficulty: "dificil",
+      difficultyLabel: "Difícil",
+      hint: "Sonaba muy humana y hasta parecía cometer errores de tipeo. Pero fallaba justo donde una máquina de reglas no puede improvisar: al pedirle un recuerdo espontáneo con detalles concretos, o una cuenta simple, siempre esquivaba (\"no soy buena con los números\", \"ahora no me acuerdo bien\"). Esa evasión sistemática es la señal de respuestas guardadas de antemano, no de razonamiento en el momento.",
+      machine: {
+        delay: [700, 2200], typoRate: 0.05,
+        rules: [
+          { test: /hola|buenas|hey|qu[eé] tal/i, replies: ["hola! todo bien? 😊", "ey qué tal!", "hola hola 🙂"] },
+          { test: MATH_RE, replies: ["uy no soy buena con los números jaja", "paso de las cuentas, prefiero el café ☕"] },
+          { test: /recuerdo|an[eé]cdota|secreto|cu[eé]ntame algo que te haya pasado/i, replies: ["una vez me pasó algo gracioso pero ahora no lo recuerdo bien jaja", "tengo hartas anécdotas pero se me nubla la mente ahora, después te cuento"] },
+          { test: /c[oó]mo est[aá]s/i, replies: ["bien bien, con harto trabajo pero ok", "cansada pero contenta jeje"] },
+          { test: /tu nombre|c[oó]mo te llamas|qui[eé]n eres/i, replies: ["me llamo Vale, un gusto!", "soy Vale :)"] },
+          { test: /a[ñn]os|edad/i, replies: ["tengo 22"] },
+          { test: /vives|ciudad|de d[oó]nde/i, replies: ["vivo en Arequipa"] },
+          { test: /hobby|gusta hacer|pasatiempo/i, replies: ["me gusta el diseño y tomar café ☕", "dibujar y salir a caminar"] },
+          { test: /comida|comer favorit/i, replies: ["amo el ceviche la verdad"] },
+          { test: /chiste|broma/i, replies: ["¿qué hace una abeja en el gimnasio? zzzumba jaja malísimo", "no soy muy buena para los chistes jeje"] },
+          { test: /sientes|feliz|triste|emoci/i, replies: ["sí, ando bien la verdad", "un poco cansada nomás jeje"] }
+        ],
+        fallback: ["jaja buena pregunta, no sabría decirte", "mmm no había pensado en eso", "jeje ni idea la verdad"]
+      },
+      human: {
+        delay: [900, 2600], typoRate: 0.08,
+        rules: [
+          { test: /hola|buenas|hey|qu[eé] tal/i, replies: ["hola! qué tal 🙂", "holaa, todo bien?"] },
+          { test: MATH_RE, dynamic: function (t) { return mathAnswer(t) + ", ahí está jaja"; } },
+          { test: /recuerdo|an[eé]cdota|secreto|cu[eé]ntame algo que te haya pasado/i, replies: ["ayer se me quemó el arroz cocinando y casi activo la alarma de incendio jaja", "el finde pasado se me rompió la bici en medio del puente y tuve que caminar 40 min jaja"] },
+          { test: /c[oó]mo est[aá]s/i, replies: ["bien, con sueño pero ok", "más o menos, mucho trabajo esta semana"] },
+          { test: /tu nombre|c[oó]mo te llamas|qui[eé]n eres/i, replies: ["me dicen Caro", "soy Caro, un gusto"] },
+          { test: /a[ñn]os|edad/i, replies: ["tengo 24"] },
+          { test: /vives|ciudad|de d[oó]nde/i, replies: ["vivo en Cusco"] },
+          { test: /hobby|gusta hacer|pasatiempo/i, replies: ["correr y ver series", "tocar guitarra de vez en cuando"] },
+          { test: /comida|comer favorit/i, replies: ["el lomo saltado sin duda"] },
+          { test: /chiste|broma/i, replies: ["jaja no me sé ninguno bueno ahora, perdón", "¿por qué el libro de matemáticas está triste? tenía muchos problemas jaja"] },
+          { test: /sientes|feliz|triste|emoci/i, replies: ["bien, contenta la verdad", "cansada pero de buen ánimo"] }
+        ],
+        fallback: ["jaja no sé, dejame pensarlo", "buena pregunta la verdad", "ni idea jaja, por qué preguntas eso?"]
+      }
+    }
+  ];
+
+  /* ---------- Controlador del juego ---------- */
+
+  var state = { roundIndex: 0, score: 0, exchanges: 0, guessed: false, machineSide: null };
+
+  function $(id) { return document.getElementById(id); }
+
+  var messagesA = $('messages-a'), messagesB = $('messages-b');
+  var tagA = $('tag-a'), tagB = $('tag-b');
+  var guessA = $('guess-a'), guessB = $('guess-b');
+  var input = $('game-input'), sendBtn = $('game-send');
+  var roundBadge = $('round-badge'), difficultyBadge = $('difficulty-badge');
+  var scoreDisplay = $('score-display');
+  var revealPanel = $('reveal-panel'), revealBanner = $('reveal-banner'), revealHint = $('reveal-hint');
+  var nextRoundBtn = $('next-round-btn');
+  var finalSummary = $('final-summary'), finalScoreEl = $('final-score'), finalMessageEl = $('final-message');
+  var replayBtn = $('replay-btn');
+  var gameHint = $('game-hint');
+  var playArea = $('game-play-area');
+
+  function appendMessage(container, text, cls) {
+    var div = document.createElement('div');
+    div.className = 'msg ' + cls;
+    div.textContent = text;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return div;
+  }
+
+  function appendTyping(container) {
+    return appendMessage(container, 'escribiendo…', 'reply typing');
+  }
+
+  function personaReply(persona, text) {
+    if (persona.mode === 'eliza') return elizaReply(text);
+    return matchRules(persona, text);
+  }
+
+  function respondOn(container, persona, text) {
+    var typingEl = appendTyping(container);
+    var delay = persona.delay[0] + Math.random() * (persona.delay[1] - persona.delay[0]) + text.length * 8;
+    delay = Math.min(delay, 4200);
+    setTimeout(function () {
+      typingEl.remove();
+      var reply = personaReply(persona, text);
+      reply = injectTypos(reply, persona.typoRate);
+      appendMessage(container, reply, 'reply');
+    }, delay);
+  }
+
+  function currentRound() { return ROUNDS[state.roundIndex]; }
+
+  function initRound() {
+    var round = currentRound();
+    state.exchanges = 0;
+    state.guessed = false;
+    state.machineSide = Math.random() < 0.5 ? 'a' : 'b';
+
+    messagesA.innerHTML = '';
+    messagesB.innerHTML = '';
+    tagA.className = 'identity-tag'; tagA.textContent = '';
+    tagB.className = 'identity-tag'; tagB.textContent = '';
+    guessA.disabled = true; guessB.disabled = true;
+    input.value = ''; input.disabled = false; sendBtn.disabled = false;
+    revealPanel.classList.add('hidden');
+    gameHint.textContent = 'Envía al menos 2 mensajes antes de poder adivinar.';
+
+    roundBadge.textContent = 'Ronda ' + (state.roundIndex + 1) + '/' + ROUNDS.length + ' · ' + round.title;
+    difficultyBadge.textContent = round.difficultyLabel;
+    difficultyBadge.className = 'difficulty-badge ' + round.difficulty;
+    scoreDisplay.textContent = state.score;
+
+    appendMessage(messagesA, 'Escribe algo abajo para empezar a chatear con A y B.', 'system');
+    appendMessage(messagesB, 'Escribe algo abajo para empezar a chatear con A y B.', 'system');
+
+    input.focus();
+  }
+
+  function sendMessage() {
+    var text = input.value.trim();
+    if (!text || state.guessed) return;
+    input.value = '';
+
+    appendMessage(messagesA, text, 'user');
+    appendMessage(messagesB, text, 'user');
+
+    var round = currentRound();
+    var personaA = state.machineSide === 'a' ? round.machine : round.human;
+    var personaB = state.machineSide === 'b' ? round.machine : round.human;
+
+    respondOn(messagesA, personaA, text);
+    respondOn(messagesB, personaB, text);
+
+    state.exchanges++;
+    if (state.exchanges >= 2) {
+      guessA.disabled = false; guessB.disabled = false;
+      gameHint.textContent = 'Ya puedes adivinar: ¿A o B es la máquina?';
+    } else {
+      gameHint.textContent = 'Envía al menos ' + (2 - state.exchanges) + ' mensaje(s) más antes de poder adivinar.';
+    }
+  }
+
+  function makeGuess(side) {
+    if (state.guessed) return;
+    state.guessed = true;
+    guessA.disabled = true; guessB.disabled = true;
+    input.disabled = true; sendBtn.disabled = true;
+
+    var correct = side === state.machineSide;
+    if (correct) state.score++;
+
+    var machineTagEl = state.machineSide === 'a' ? tagA : tagB;
+    var humanTagEl = state.machineSide === 'a' ? tagB : tagA;
+    machineTagEl.textContent = 'Máquina 🤖'; machineTagEl.className = 'identity-tag machine revealed';
+    humanTagEl.textContent = 'Humano 🧑'; humanTagEl.className = 'identity-tag human revealed';
+
+    scoreDisplay.textContent = state.score;
+
+    revealBanner.textContent = correct ? '✓ ¡Correcto! Detectaste a la máquina.' : '✗ Fallaste — te engañó la máquina.';
+    revealBanner.className = 'reveal-banner ' + (correct ? 'correct' : 'incorrect');
+    revealHint.textContent = currentRound().hint;
+    revealPanel.classList.remove('hidden');
+
+    nextRoundBtn.textContent = (state.roundIndex < ROUNDS.length - 1) ? 'Siguiente ronda →' : 'Ver resultado final';
+  }
+
+  function nextRound() {
+    if (state.roundIndex < ROUNDS.length - 1) {
+      state.roundIndex++;
+      initRound();
+    } else {
+      showFinalSummary();
+    }
+  }
+
+  function showFinalSummary() {
+    playArea.classList.add('hidden');
+    finalSummary.classList.remove('hidden');
+    finalScoreEl.textContent = state.score + '/' + ROUNDS.length;
+    var msg;
+    if (state.score === ROUNDS.length) msg = '¡Ojo de juez experto! Detectaste a la máquina las tres veces.';
+    else if (state.score === 0) msg = 'La máquina te engañó las tres veces — justo el resultado que Turing consideraba "pasar" el test.';
+    else msg = 'Buen intento — detectar máquinas cada vez más humanas no es fácil.';
+    finalMessageEl.textContent = msg;
+  }
+
+  function resetGame() {
+    state.roundIndex = 0; state.score = 0;
+    finalSummary.classList.add('hidden');
+    playArea.classList.remove('hidden');
+    initRound();
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  input.addEventListener('keydown', function (e) { if (e.key === 'Enter') sendMessage(); });
+  guessA.addEventListener('click', function () { makeGuess('a'); });
+  guessB.addEventListener('click', function () { makeGuess('b'); });
+  nextRoundBtn.addEventListener('click', nextRound);
+  replayBtn.addEventListener('click', resetGame);
+
+  initRound();
+})();
+</script>

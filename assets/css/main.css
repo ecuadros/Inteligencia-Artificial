@@ -775,3 +775,543 @@ code, pre, .mono {
   color: var(--accent2);
   border-color: var(--accent2);
 }
+
+/* ============================================================
+   Demo Page — shared shell
+   ============================================================ */
+.demo-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  animation: fadeInUp 0.6s ease both;
+}
+
+.demo-breadcrumb {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 1.75rem;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.demo-breadcrumb a { color: var(--muted); }
+.demo-breadcrumb a:hover { color: var(--accent); }
+.crumb-sep { opacity: 0.5; }
+.crumb-current { color: var(--text); }
+
+.demo-header { margin-bottom: 2rem; }
+
+.demo-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent2);
+  margin-bottom: 0.5rem;
+}
+
+.demo-title {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.6rem;
+  line-height: 1.15;
+}
+
+.demo-subtitle {
+  color: var(--muted);
+  font-size: 1.05rem;
+  max-width: 720px;
+  line-height: 1.6;
+}
+
+.demo-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.demo-toc a {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.35rem 0.9rem;
+  text-decoration: none;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.demo-toc a:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.demo-section { margin-bottom: 3rem; }
+
+.demo-section h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 1rem;
+}
+
+.demo-section h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.6rem;
+  color: var(--text);
+}
+
+.demo-section p {
+  color: var(--muted);
+  line-height: 1.75;
+  margin-bottom: 0.9rem;
+  max-width: 760px;
+}
+
+.demo-section p strong { color: var(--text); font-weight: 600; }
+
+.section-kicker {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+  display: block;
+}
+
+.callout {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.65;
+  max-width: 760px;
+}
+
+.callout strong { color: var(--text); }
+.callout.accent2 { border-left-color: var(--accent2); }
+
+details.info-toggle {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.8rem 1.1rem;
+  margin-bottom: 1.25rem;
+}
+
+details.info-toggle summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+details.info-toggle summary::-webkit-details-marker { display: none; }
+
+details.info-toggle summary::before {
+  content: '▸';
+  color: var(--accent);
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+details.info-toggle[open] summary::before { transform: rotate(90deg); }
+
+details.info-toggle .toggle-body {
+  padding-top: 0.85rem;
+  color: var(--muted);
+  line-height: 1.7;
+  font-size: 0.9rem;
+}
+
+details.info-toggle .toggle-body li { margin-bottom: 0.4rem; }
+
+/* Turing diagram */
+.turing-diagram {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 1.5rem;
+  margin: 1.5rem 0;
+  max-width: 520px;
+}
+
+.diagram-pair { display: flex; gap: 1.5rem; }
+
+.diagram-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 120px;
+  height: 92px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 1.6rem;
+  text-align: center;
+}
+
+.diagram-box-label {
+  font-size: 0.68rem;
+  color: var(--muted);
+  font-weight: 600;
+  font-family: var(--font-sans);
+}
+
+.diagram-links {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--accent);
+}
+
+.diagram-caption {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-align: center;
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Timeline */
+.timeline {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding: 0.5rem 0.1rem 1.25rem;
+  scrollbar-width: thin;
+}
+
+.timeline-item {
+  flex: 0 0 210px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.timeline-year {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+}
+
+.timeline-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.35rem; }
+.timeline-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+
+/* Debate list */
+.debate-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 760px;
+}
+
+.debate-list li {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent2);
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1.1rem;
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   Turing Test Game
+   ============================================================ */
+.game-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.game-status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.game-status-left { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+
+.round-badge {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(88, 166, 255, 0.08);
+  border: 1px solid rgba(88, 166, 255, 0.25);
+  padding: 0.25rem 0.7rem;
+  border-radius: 20px;
+}
+
+.difficulty-badge {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.difficulty-badge.facil { color: var(--accent3); background: rgba(63, 185, 80, 0.1); border: 1px solid rgba(63, 185, 80, 0.25); }
+.difficulty-badge.medio { color: var(--warn); background: rgba(210, 153, 34, 0.1); border: 1px solid rgba(210, 153, 34, 0.2); }
+.difficulty-badge.dificil { color: var(--danger); background: rgba(248, 81, 73, 0.1); border: 1px solid rgba(248, 81, 73, 0.25); }
+
+.score-display { font-family: var(--font-mono); font-size: 0.85rem; color: var(--muted); }
+.score-display strong { color: var(--text); }
+
+.turing-arena {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.turing-panel {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  min-height: 360px;
+  overflow: hidden;
+}
+
+.turing-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.panel-label { display: flex; align-items: center; gap: 0.5rem; }
+
+.panel-letter {
+  font-family: var(--font-mono);
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.identity-tag {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.identity-tag.revealed { opacity: 1; }
+.identity-tag.machine { color: var(--danger); background: rgba(248, 81, 73, 0.1); border: 1px solid rgba(248, 81, 73, 0.25); }
+.identity-tag.human { color: var(--accent3); background: rgba(63, 185, 80, 0.1); border: 1px solid rgba(63, 185, 80, 0.25); }
+
+.panel-messages {
+  flex: 1;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  overflow-y: auto;
+  max-height: 420px;
+}
+
+.msg {
+  max-width: 88%;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: 0.87rem;
+  line-height: 1.5;
+  animation: fadeIn 0.25s ease both;
+  word-wrap: break-word;
+}
+
+.msg.user {
+  align-self: flex-end;
+  background: rgba(88, 166, 255, 0.12);
+  border: 1px solid rgba(88, 166, 255, 0.25);
+  color: var(--text);
+  border-bottom-right-radius: 2px;
+}
+
+.msg.reply {
+  align-self: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-bottom-left-radius: 2px;
+}
+
+.msg.typing { color: var(--muted); font-style: italic; }
+
+.msg.system {
+  align-self: center;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-style: italic;
+  text-align: center;
+  max-width: 100%;
+}
+
+.turing-panel-footer { padding: 0.75rem 1rem; border-top: 1px solid var(--border); }
+
+.guess-btn {
+  width: 100%;
+  padding: 0.55rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.guess-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(88, 166, 255, 0.08);
+}
+
+.guess-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.game-input-row { display: flex; gap: 0.75rem; }
+
+.game-input-row input[type="text"] {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.9rem;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+}
+
+.game-input-row input[type="text"]:focus { outline: none; border-color: var(--accent); }
+.game-input-row input[type="text"]:disabled { opacity: 0.5; }
+
+.game-input-row button {
+  padding: 0.65rem 1.4rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: rgba(88, 166, 255, 0.1);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.game-input-row button:hover:not(:disabled) { background: var(--accent); color: var(--bg); }
+.game-input-row button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.game-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 0.6rem;
+  font-family: var(--font-mono);
+}
+
+.reveal-panel {
+  margin-top: 1.25rem;
+  padding: 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  animation: fadeInUp 0.4s ease both;
+}
+
+.reveal-banner { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem; }
+.reveal-banner.correct { color: var(--accent3); }
+.reveal-banner.incorrect { color: var(--danger); }
+
+.reveal-hint { color: var(--muted); line-height: 1.6; font-size: 0.9rem; margin-bottom: 1rem; }
+
+.reveal-actions { display: flex; justify-content: flex-end; }
+
+.btn-primary {
+  padding: 0.6rem 1.4rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 700;
+  font-size: 0.87rem;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.btn-primary:hover { background: #79b9ff; }
+
+.final-summary { text-align: center; padding: 3rem 1.5rem; }
+
+.final-score {
+  font-family: var(--font-mono);
+  font-size: 3rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.final-message { font-size: 1.1rem; color: var(--text); margin-bottom: 1.25rem; font-weight: 600; }
+.final-sub { color: var(--muted); max-width: 520px; margin: 0 auto 1.75rem; line-height: 1.7; }
+
+.hidden { display: none !important; }
+
+@media (max-width: 820px) {
+  .turing-arena { grid-template-columns: 1fr; }
+}
