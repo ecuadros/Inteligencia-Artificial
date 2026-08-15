@@ -533,6 +533,7 @@ next_title: "Minimax y poda alfa-beta en tres en línea"
     $('compare-summary').textContent = summary;
   });
 
+  state.walls = makeEmptyWalls();
   buildGridDOM();
   renderMaze();
   clearSearchVisuals();
