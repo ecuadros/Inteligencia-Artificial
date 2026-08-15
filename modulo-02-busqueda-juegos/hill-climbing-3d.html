@@ -55,6 +55,11 @@ next_title: "Regresión lineal con descenso de gradiente animado"
           <div class="terrain-hud" id="terrain-hud">Haz clic en el terreno para elegir un punto de partida.</div>
         </div>
         <p class="game-hint">Arrastra = rotar cámara · rueda del mouse = zoom · clic en el terreno = punto de partida.</p>
+        <div class="maze-legend">
+          <span class="maze-legend-item"><span class="maze-legend-swatch" style="background:#3fb950;"></span>Punto de partida</span>
+          <span class="maze-legend-item"><span class="maze-legend-swatch" style="background:#ffee00;"></span>Trayectoria</span>
+          <span class="maze-legend-item"><span class="maze-legend-swatch" style="background:#f85149;"></span>Escalador (posición actual)</span>
+        </div>
       </div>
 
       <div class="vacuum-side">
@@ -253,11 +258,40 @@ next_title: "Regresión lineal con descenso de gradiente animado"
 
   function terrainYAt(mapX, mapZ) { return heightFn(mapX, mapZ); }
 
-  function addTrailMarker(mapX, mapZ, h, color, size) {
-    var geo = new THREE.SphereGeometry(size || 0.22, 10, 10);
-    var mat = new THREE.MeshBasicMaterial({ color: color || 0x58a6ff });
+  var TRAIL_COLOR = 0xffee00;
+  var TRAIL_EMISSIVE = 0x554400;
+
+  function trailPoint(mapX, mapZ, h) { return new THREE.Vector3(mapX, h + 0.16, -mapZ); }
+
+  function addTrailJoint(mapX, mapZ, h, radius) {
+    var geo = new THREE.SphereGeometry(radius || 0.13, 10, 10);
+    var mat = new THREE.MeshStandardMaterial({ color: TRAIL_COLOR, emissive: TRAIL_EMISSIVE, roughness: 0.35 });
     var sphere = new THREE.Mesh(geo, mat);
-    sphere.position.set(mapX, h + 0.12, -mapZ);
+    sphere.position.copy(trailPoint(mapX, mapZ, h));
+    trailGroup.add(sphere);
+    return sphere;
+  }
+
+  function addTrailSegment(x1, z1, h1, x2, z2, h2) {
+    var p1 = trailPoint(x1, z1, h1);
+    var p2 = trailPoint(x2, z2, h2);
+    var dir = new THREE.Vector3().subVectors(p2, p1);
+    var len = dir.length();
+    if (len < 1e-4) return;
+    var geo = new THREE.CylinderGeometry(0.09, 0.09, len, 8, 1);
+    var mat = new THREE.MeshStandardMaterial({ color: TRAIL_COLOR, emissive: TRAIL_EMISSIVE, roughness: 0.35 });
+    var cyl = new THREE.Mesh(geo, mat);
+    cyl.position.copy(p1).addScaledVector(dir, 0.5);
+    cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+    trailGroup.add(cyl);
+    addTrailJoint(x2, z2, h2);
+  }
+
+  function addStartMarker(mapX, mapZ, h) {
+    var geo = new THREE.SphereGeometry(0.3, 14, 14);
+    var mat = new THREE.MeshStandardMaterial({ color: 0x3fb950, emissive: 0x0c2a12 });
+    var sphere = new THREE.Mesh(geo, mat);
+    sphere.position.copy(trailPoint(mapX, mapZ, h));
     trailGroup.add(sphere);
     return sphere;
   }
@@ -287,6 +321,7 @@ next_title: "Regresión lineal con descenso de gradiente animado"
     var h = terrainYAt(mapX, mapZ);
     climber = { x: mapX, z: mapZ, h: h, steps: 0, active: true, finished: false, timer: null, running: false };
     clearGroup(trailGroup);
+    addStartMarker(mapX, mapZ, h);
     placeClimberMarker(mapX, mapZ, h);
     statHeight.textContent = h.toFixed(2);
     statSteps.textContent = '0';
@@ -308,7 +343,7 @@ next_title: "Regresión lineal con descenso de gradiente animado"
       resultBanner.classList.remove('hidden');
       return;
     }
-    addTrailMarker(climber.x, climber.z, climber.h, 0x58a6ff, 0.16);
+    addTrailSegment(climber.x, climber.z, climber.h, nb.x, nb.z, nb.h);
     climber.x = nb.x; climber.z = nb.z; climber.h = nb.h; climber.steps++;
     placeClimberMarker(climber.x, climber.z, climber.h);
     statHeight.textContent = climber.h.toFixed(2);
