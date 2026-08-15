@@ -1653,3 +1653,101 @@ details.info-toggle .toggle-body li { margin-bottom: 0.4rem; }
 @media (max-width: 520px) {
   .peas-columns { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   Módulo 3 — D3 charts shared across regresión / frontera / árbol
+   ============================================================ */
+.two-col-charts, .tree-layout {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.chart-box {
+  flex: 1 1 380px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.chart-box.wide { flex-basis: 100%; }
+
+.chart-box h3 {
+  margin-top: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.chart-box svg { display: block; width: 100%; height: auto; max-width: 100%; }
+
+.mono-value {
+  font-family: var(--font-mono);
+  color: var(--text);
+  font-size: 0.82rem;
+  min-width: 2.6rem;
+  display: inline-block;
+}
+
+/* D3 axes (dark theme) */
+.axis path.domain, .axis line { stroke: var(--border); }
+.axis text { fill: var(--muted); font-size: 10px; font-family: var(--font-mono); }
+
+/* Scatter points, shared classes across the three demos */
+.data-point { stroke: var(--bg); stroke-width: 1.5px; cursor: default; }
+.data-point.class-a { fill: var(--accent); }
+.data-point.class-b { fill: var(--accent2); }
+.data-point.class-c { fill: var(--accent3); }
+
+/* Regression / classification lines */
+.fit-line { stroke-width: 2.5; fill: none; }
+.model-line { stroke: var(--accent); }
+.manual-line { stroke: var(--accent2); stroke-dasharray: 6 4; }
+.drag-handle { fill: var(--accent2); stroke: var(--bg); stroke-width: 2; cursor: ns-resize; }
+.loss-path { fill: none; stroke: var(--danger); stroke-width: 2; }
+
+.vacuum-controls button.class-b-active {
+  border-color: var(--accent2);
+  background: rgba(188, 140, 255, 0.12);
+  color: var(--accent2);
+}
+
+.callout.warn { border-left-color: var(--warn); }
+
+/* Decision-tree diagram + partition regions */
+.leaf-region {
+  opacity: 0.85;
+  stroke-width: 1;
+  cursor: pointer;
+  transition: opacity var(--transition), stroke-width var(--transition);
+}
+
+.leaf-region.class-a { fill: rgba(88, 166, 255, 0.18); stroke: var(--accent); }
+.leaf-region.class-b { fill: rgba(188, 140, 255, 0.18); stroke: var(--accent2); }
+.leaf-region.class-c { fill: rgba(63, 185, 80, 0.18); stroke: var(--accent3); }
+.leaf-region.selected { opacity: 1; stroke-width: 2.5; }
+
+.tree-node { cursor: pointer; }
+
+.tree-node rect {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1;
+  transition: all var(--transition);
+}
+
+.tree-node.leaf.class-a rect { fill: rgba(88, 166, 255, 0.15); stroke: var(--accent); }
+.tree-node.leaf.class-b rect { fill: rgba(188, 140, 255, 0.15); stroke: var(--accent2); }
+.tree-node.leaf.class-c rect { fill: rgba(63, 185, 80, 0.15); stroke: var(--accent3); }
+.tree-node.selected rect { stroke-width: 2.5; stroke: var(--text); }
+
+.tree-node-line1 { fill: var(--text); font-size: 10px; font-family: var(--font-mono); font-weight: 600; }
+.tree-node-line2 { fill: var(--muted); font-size: 9px; font-family: var(--font-mono); }
+.tree-link { stroke: var(--border); stroke-width: 1.5; }
+
+@media (max-width: 820px) {
+  .two-col-charts, .tree-layout { flex-direction: column; }
+}

@@ -1,0 +1,395 @@
+---
+layout: demo
+title: "Frontera de decisión manipulable"
+subtitle: "En vez de predecir un número, ahora vas a separar dos grupos. La pregunta cambia de \"¿cuánto?\" a \"¿cuál de los dos?\"."
+eyebrow: "Módulo 3 · Aprendizaje Supervisado"
+module: 3
+module_title: "Aprendizaje Supervisado"
+prev_url: "/modulo-03-aprendizaje-supervisado/regresion-lineal.html"
+prev_title: "Regresión lineal con descenso de gradiente animado"
+next_url: "/modulo-03-aprendizaje-supervisado/arbol-decision.html"
+next_title: "Árbol de decisión visual"
+---
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#practica">Practica</a>
+  <a href="#mecanica">Cómo funciona</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>Separar en vez de predecir un número</h2>
+  <p>
+    ¿Este correo es spam o no? ¿Este préstamo se aprueba o se rechaza? Ya no queremos un número —
+    queremos elegir entre categorías a partir de ejemplos ya etiquetados. Geométricamente, si
+    representamos cada ejemplo como un punto en un plano (dos características, dos ejes), el trabajo del
+    algoritmo es encontrar una <strong>frontera</strong> que separe los grupos lo mejor posible.
+  </p>
+  <p>
+    Aquí vas a entrenar un modelo lineal (regresión logística) que dibuja esa frontera como una línea
+    recta — y también vas a intentar dibujarla tú mismo a mano, para comparar tu intuición contra lo que
+    encuentra el algoritmo.
+  </p>
+</section>
+
+<section class="demo-section" id="practica">
+  <span class="section-kicker">// práctica</span>
+  <h2>Entrena la frontera, o dibújala tú</h2>
+  <p>
+    Elige un conjunto de datos, agrega tus propios puntos con el botón de clase activa, y compara tu
+    frontera dibujada a mano (arrastra los dos círculos) contra la que encuentra el entrenamiento.
+  </p>
+
+  <div class="scenario-tabs" id="dataset-tabs"></div>
+
+  <div class="game-panel">
+    <div class="chart-box wide">
+      <h3>Datos y fronteras</h3>
+      <div id="clf-scatter"></div>
+      <p class="game-hint" id="clf-hint">Clic en el gráfico = agregar un punto de la clase activa.</p>
+    </div>
+
+    <div class="vacuum-controls">
+      <button id="clf-class-toggle" class="primary">Clase activa: A</button>
+      <button id="clf-clear">Limpiar puntos</button>
+      <button id="clf-toggle" class="primary">▶ Entrenar</button>
+      <button id="clf-step">⏭ Paso</button>
+      <button id="clf-reset">↺ Reiniciar ajuste</button>
+    </div>
+
+    <div class="vacuum-speed">
+      <span>Tasa de aprendizaje</span>
+      <input type="range" id="clf-lr" min="0.05" max="3" step="0.05" value="0.6" />
+      <span class="mono-value" id="clf-lr-value">0.60</span>
+    </div>
+
+    <div class="vacuum-stats">
+      <div class="stat-box"><div class="stat-value" id="clf-stat-iter">0</div><div class="stat-label">Iteración</div></div>
+      <div class="stat-box"><div class="stat-value" id="clf-stat-loss">—</div><div class="stat-label">Pérdida</div></div>
+      <div class="stat-box"><div class="stat-value" id="clf-stat-acc">—</div><div class="stat-label">Precisión modelo</div></div>
+      <div class="stat-box"><div class="stat-value" id="clf-stat-manual">—</div><div class="stat-label">Precisión tu frontera</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>De una recta a una probabilidad</h2>
+  <p>
+    El modelo calcula un puntaje lineal a partir de las dos coordenadas de un punto (igual que la recta
+    del demo anterior, pero con dos variables). Ese puntaje puede ser cualquier número, así que se pasa
+    por la <strong>función logística (sigmoide)</strong>, que lo "aplasta" a un valor entre 0 y 1 — una
+    probabilidad de pertenecer a la clase B. El entrenamiento ajusta la recta (por descenso de gradiente,
+    igual que antes, pero minimizando <em>entropía cruzada</em> en vez de error cuadrático) para que esas
+    probabilidades se acerquen a las etiquetas reales.
+  </p>
+  <div class="callout accent2">
+    Prueba el conjunto de datos "No separable (XOR)". Vas a ver que, entrenes lo que entrenes, la recta
+    nunca logra separar bien los grupos — porque geométricamente <strong>no existe</strong> una línea
+    recta que los separe. Un modelo lineal solo puede dibujar fronteras rectas. Superar esa limitación es
+    exactamente uno de los motivos por los que existen las redes neuronales del Módulo 5.
+  </div>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>¿Lograste dibujar a mano una frontera con mejor precisión que el modelo entrenado? ¿En qué conjunto de datos fue más fácil o más difícil?</li>
+    <li>En el conjunto "con solapamiento", ¿puede algún modelo lineal lograr 100% de precisión? ¿Por qué no, y qué significa eso sobre los datos mismos?</li>
+    <li>¿Por qué la función sigmoide, y no simplemente usar el puntaje lineal directamente como probabilidad?</li>
+    <li>¿Qué otras dos características (features) del mundo real usarías para separar spam de no-spam? ¿Crees que una frontera recta bastaría?</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  var DATASETS = [
+    { id: 'separable', name: 'Separable', gen: genSeparable },
+    { id: 'overlap', name: 'Con solapamiento', gen: genOverlap },
+    { id: 'xor', name: 'No separable (XOR)', gen: genXor }
+  ];
+
+  function gaussianPoint(cx, cy, std) {
+    function rnd() {
+      var u = 1 - Math.random(), v = Math.random();
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+    return { x: cx + rnd() * std, y: cy + rnd() * std };
+  }
+
+  function genSeparable() {
+    var pts = [];
+    for (var i = 0; i < 16; i++) { var p = gaussianPoint(3, 3, 1); pts.push({ x: p.x, y: p.y, label: 0 }); }
+    for (var j = 0; j < 16; j++) { var q = gaussianPoint(8, 8, 1); pts.push({ x: q.x, y: q.y, label: 1 }); }
+    return pts;
+  }
+
+  function genOverlap() {
+    var pts = [];
+    for (var i = 0; i < 18; i++) { var p = gaussianPoint(4.5, 5, 1.8); pts.push({ x: p.x, y: p.y, label: 0 }); }
+    for (var j = 0; j < 18; j++) { var q = gaussianPoint(6.5, 6, 1.8); pts.push({ x: q.x, y: q.y, label: 1 }); }
+    return pts;
+  }
+
+  function genXor() {
+    var pts = [];
+    [[3, 3], [8, 8]].forEach(function (c) {
+      for (var i = 0; i < 9; i++) { var p = gaussianPoint(c[0], c[1], 0.8); pts.push({ x: p.x, y: p.y, label: 0 }); }
+    });
+    [[3, 8], [8, 3]].forEach(function (c) {
+      for (var i = 0; i < 9; i++) { var p = gaussianPoint(c[0], c[1], 0.8); pts.push({ x: p.x, y: p.y, label: 1 }); }
+    });
+    return pts;
+  }
+
+  var state = {
+    points: [],
+    activeClass: 0,
+    w1: 0, w2: 0, b: 0,
+    iter: 0,
+    running: false,
+    timer: null,
+    norm: { mx1: 0, sx1: 1, mx2: 0, sx2: 1 },
+    manual: { yLeft: 5, yRight: 5 }
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  var lrInput = $('clf-lr'), lrValue = $('clf-lr-value');
+  var classToggleBtn = $('clf-class-toggle');
+  var clearBtn = $('clf-clear');
+  var toggleBtn = $('clf-toggle'), stepBtn = $('clf-step'), resetBtn = $('clf-reset');
+  var statIter = $('clf-stat-iter'), statLoss = $('clf-stat-loss'), statAcc = $('clf-stat-acc'), statManual = $('clf-stat-manual');
+  var hint = $('clf-hint');
+  var tabsEl = $('dataset-tabs');
+
+  var margin = { top: 16, right: 16, bottom: 32, left: 44 };
+  var width = 560, height = 420;
+  var innerW = width - margin.left - margin.right;
+  var innerH = height - margin.top - margin.bottom;
+
+  var svg = d3.select('#clf-scatter').append('svg')
+    .attr('viewBox', '0 0 ' + width + ' ' + height)
+    .attr('width', '100%').attr('height', height);
+  var g = svg.append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+  var xAxisG = g.append('g').attr('class', 'axis').attr('transform', 'translate(0,' + innerH + ')');
+  var yAxisG = g.append('g').attr('class', 'axis');
+  var modelLine = g.append('line').attr('class', 'fit-line model-line');
+  var manualLine = g.append('line').attr('class', 'fit-line manual-line');
+  var clickCatcher = g.append('rect').attr('width', innerW).attr('height', innerH).attr('fill', 'transparent').style('cursor', 'crosshair');
+
+  var xScale = d3.scaleLinear().domain([0, 11]).range([0, innerW]);
+  var yScale = d3.scaleLinear().domain([0, 11]).range([innerH, 0]);
+  xAxisG.call(d3.axisBottom(xScale).ticks(6));
+  yAxisG.call(d3.axisLeft(yScale).ticks(6));
+
+  var dragHandleLeft = g.append('circle').attr('class', 'drag-handle').attr('r', 7).attr('cx', xScale(0));
+  var dragHandleRight = g.append('circle').attr('class', 'drag-handle').attr('r', 7).attr('cx', xScale(11));
+
+  function renderTabs() {
+    tabsEl.innerHTML = '';
+    DATASETS.forEach(function (ds, idx) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'scenario-tab' + (idx === state.datasetIndex ? ' active' : '');
+      btn.textContent = ds.name;
+      btn.addEventListener('click', function () {
+        state.datasetIndex = idx;
+        loadDataset();
+        renderTabs();
+      });
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  function loadDataset() {
+    state.points = DATASETS[state.datasetIndex].gen();
+    resetFit();
+  }
+
+  function recomputeNormalization() {
+    var xs = state.points.map(function (p) { return p.x; });
+    var ys = state.points.map(function (p) { return p.y; });
+    if (!xs.length) { state.norm = { mx1: 5, sx1: 1, mx2: 5, sx2: 1 }; return; }
+    var mx1 = d3.mean(xs), mx2 = d3.mean(ys);
+    var sx1 = Math.sqrt(d3.mean(xs.map(function (v) { return (v - mx1) * (v - mx1); }))) || 1;
+    var sx2 = Math.sqrt(d3.mean(ys.map(function (v) { return (v - mx2) * (v - mx2); }))) || 1;
+    state.norm = { mx1: mx1, sx1: sx1, mx2: mx2, sx2: sx2 };
+  }
+
+  function drawPoints() {
+    var sel = g.selectAll('circle.data-point').data(state.points);
+    sel.enter().append('circle').attr('class', 'data-point').attr('r', 5)
+      .merge(sel)
+      .attr('cx', function (d) { return xScale(d.x); })
+      .attr('cy', function (d) { return yScale(d.y); })
+      .attr('class', function (d) { return 'data-point ' + (d.label === 0 ? 'class-a' : 'class-b'); });
+    sel.exit().remove();
+  }
+
+  function modelLineEndpoints() {
+    var A = state.w1 / state.norm.sx1;
+    var B = state.w2 / state.norm.sx2;
+    var C = state.b - (state.w1 * state.norm.mx1) / state.norm.sx1 - (state.w2 * state.norm.mx2) / state.norm.sx2;
+    var x0 = xScale.domain()[0], x1 = xScale.domain()[1];
+    if (Math.abs(B) < 1e-6) {
+      var xv = Math.abs(A) < 1e-6 ? (x0 + x1) / 2 : -C / A;
+      return [{ x: xv, y: yScale.domain()[0] }, { x: xv, y: yScale.domain()[1] }];
+    }
+    var y0 = -(A * x0 + C) / B;
+    var y1 = -(A * x1 + C) / B;
+    return [{ x: x0, y: y0 }, { x: x1, y: y1 }];
+  }
+
+  function drawModelLine() {
+    if (state.points.length < 2) { modelLine.attr('opacity', 0); return; }
+    var pts = modelLineEndpoints();
+    modelLine.attr('opacity', 1)
+      .attr('x1', xScale(pts[0].x)).attr('y1', yScale(pts[0].y))
+      .attr('x2', xScale(pts[1].x)).attr('y2', yScale(pts[1].y));
+  }
+
+  function drawManualLine() {
+    var x0 = xScale.domain()[0], x1 = xScale.domain()[1];
+    manualLine
+      .attr('x1', xScale(x0)).attr('y1', yScale(state.manual.yLeft))
+      .attr('x2', xScale(x1)).attr('y2', yScale(state.manual.yRight));
+    dragHandleLeft.attr('cy', yScale(state.manual.yLeft));
+    dragHandleRight.attr('cy', yScale(state.manual.yRight));
+  }
+
+  function sigmoid(z) { return 1 / (1 + Math.exp(-z)); }
+
+  function modelAccuracy() {
+    if (!state.points.length) return null;
+    var correct = 0;
+    state.points.forEach(function (p) {
+      var nx1 = (p.x - state.norm.mx1) / state.norm.sx1;
+      var nx2 = (p.y - state.norm.mx2) / state.norm.sx2;
+      var prob = sigmoid(state.w1 * nx1 + state.w2 * nx2 + state.b);
+      var pred = prob >= 0.5 ? 1 : 0;
+      if (pred === p.label) correct++;
+    });
+    return correct / state.points.length;
+  }
+
+  function manualAccuracy() {
+    if (!state.points.length) return null;
+    var x0 = xScale.domain()[0], x1 = xScale.domain()[1];
+    var correctA = 0, correctB = 0;
+    state.points.forEach(function (p) {
+      var yLine = state.manual.yLeft + (state.manual.yRight - state.manual.yLeft) * (p.x - x0) / (x1 - x0);
+      var above = p.y > yLine ? 1 : 0;
+      if (above === p.label) correctA++;
+      if ((1 - above) === p.label) correctB++;
+    });
+    return Math.max(correctA, correctB) / state.points.length;
+  }
+
+  function updateStats() {
+    statIter.textContent = state.iter;
+    var acc = modelAccuracy();
+    statAcc.textContent = acc === null ? '—' : Math.round(acc * 100) + '%';
+    var macc = manualAccuracy();
+    statManual.textContent = macc === null ? '—' : Math.round(macc * 100) + '%';
+  }
+
+  function fullRedraw() {
+    drawPoints();
+    drawModelLine();
+    drawManualLine();
+    updateStats();
+  }
+
+  function gradientStep() {
+    if (state.points.length < 2) return;
+    var lr = parseFloat(lrInput.value);
+    var n = state.points.length;
+    var gw1 = 0, gw2 = 0, gb = 0, lossSum = 0;
+    for (var i = 0; i < n; i++) {
+      var p = state.points[i];
+      var nx1 = (p.x - state.norm.mx1) / state.norm.sx1;
+      var nx2 = (p.y - state.norm.mx2) / state.norm.sx2;
+      var prob = sigmoid(state.w1 * nx1 + state.w2 * nx2 + state.b);
+      var dz = prob - p.label;
+      gw1 += dz * nx1; gw2 += dz * nx2; gb += dz;
+      var eps = 1e-9;
+      lossSum += -(p.label * Math.log(prob + eps) + (1 - p.label) * Math.log(1 - prob + eps));
+    }
+    state.w1 -= lr * (gw1 / n);
+    state.w2 -= lr * (gw2 / n);
+    state.b -= lr * (gb / n);
+    state.iter++;
+    statLoss.textContent = (lossSum / n).toFixed(4);
+    drawModelLine();
+    updateStats();
+    hint.textContent = 'Iteración ' + state.iter + '.';
+  }
+
+  function startRunning() {
+    if (state.points.length < 2) return;
+    state.running = true;
+    toggleBtn.textContent = '⏸ Pausar';
+    state.timer = setInterval(gradientStep, 80);
+  }
+
+  function stopRunning() {
+    state.running = false;
+    toggleBtn.textContent = '▶ Entrenar';
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  }
+
+  function resetFit() {
+    stopRunning();
+    state.w1 = 0; state.w2 = 0; state.b = 0; state.iter = 0;
+    statLoss.textContent = '—';
+    recomputeNormalization();
+    fullRedraw();
+  }
+
+  clickCatcher.on('click', function (event) {
+    var coords = d3.pointer(event);
+    var x = xScale.invert(coords[0]);
+    var y = yScale.invert(coords[1]);
+    state.points.push({ x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, label: state.activeClass });
+    resetFit();
+  });
+
+  var dragBehaviorLeft = d3.drag().on('drag', function (event) {
+    var y = Math.max(yScale.domain()[0], Math.min(yScale.domain()[1], yScale.invert(event.y)));
+    state.manual.yLeft = y;
+    drawManualLine();
+    updateStats();
+  });
+  var dragBehaviorRight = d3.drag().on('drag', function (event) {
+    var y = Math.max(yScale.domain()[0], Math.min(yScale.domain()[1], yScale.invert(event.y)));
+    state.manual.yRight = y;
+    drawManualLine();
+    updateStats();
+  });
+  dragHandleLeft.call(dragBehaviorLeft);
+  dragHandleRight.call(dragBehaviorRight);
+
+  classToggleBtn.addEventListener('click', function () {
+    state.activeClass = state.activeClass === 0 ? 1 : 0;
+    classToggleBtn.textContent = 'Clase activa: ' + (state.activeClass === 0 ? 'A' : 'B');
+    classToggleBtn.classList.toggle('class-b-active', state.activeClass === 1);
+  });
+  clearBtn.addEventListener('click', function () { state.points = []; resetFit(); });
+  toggleBtn.addEventListener('click', function () { if (state.running) stopRunning(); else startRunning(); });
+  stepBtn.addEventListener('click', function () { if (!state.running) gradientStep(); });
+  resetBtn.addEventListener('click', resetFit);
+  lrInput.addEventListener('input', function () { lrValue.textContent = parseFloat(lrInput.value).toFixed(2); });
+
+  state.datasetIndex = 0;
+  renderTabs();
+  loadDataset();
+})();
+</script>

@@ -1,0 +1,477 @@
+---
+layout: demo
+title: "Árbol de decisión visual"
+subtitle: "Un modelo lineal traza una sola recta. Un árbol hace preguntas de sí/no, una a la vez, hasta que puede decidir — y eso le permite dibujar fronteras mucho más flexibles."
+eyebrow: "Módulo 3 · Aprendizaje Supervisado"
+module: 3
+module_title: "Aprendizaje Supervisado"
+prev_url: "/modulo-03-aprendizaje-supervisado/frontera-decision.html"
+prev_title: "Frontera de decisión manipulable"
+---
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#practica">Practica</a>
+  <a href="#mecanica">Cómo funciona</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>Decisiones que se puedan explicar</h2>
+  <p>
+    Un banco que rechaza un préstamo, o un sistema de triage que prioriza a un paciente, necesitan poder
+    explicar <strong>por qué</strong> decidieron lo que decidieron — no basta con una probabilidad
+    opaca. Un árbol de decisión responde exactamente a eso: es una secuencia de preguntas simples de
+    sí/no sobre una característica a la vez ("¿el ingreso es mayor a X?"), hasta llegar a una decisión.
+  </p>
+  <p>
+    Como cada pregunta corta el espacio en dos mitades alineadas a un eje, un árbol puede terminar
+    dibujando fronteras con forma de escalera — algo que una sola recta, como la del demo anterior, no
+    puede lograr.
+  </p>
+</section>
+
+<section class="demo-section" id="practica">
+  <span class="section-kicker">// práctica</span>
+  <h2>Haz crecer el árbol, un corte a la vez</h2>
+  <p>
+    Elige un conjunto de datos, ajusta la profundidad máxima y agrega divisiones una por una para ver
+    exactamente qué corte eligió el algoritmo y por qué. Haz clic en un nodo del árbol o en una región del
+    gráfico — están conectados.
+  </p>
+
+  <div class="scenario-tabs" id="tree-dataset-tabs"></div>
+
+  <div class="game-panel">
+    <div class="tree-layout">
+      <div class="chart-box">
+        <h3>Partición del espacio</h3>
+        <div id="tree-scatter"></div>
+      </div>
+      <div class="chart-box">
+        <h3>Estructura del árbol</h3>
+        <div id="tree-diagram"></div>
+      </div>
+    </div>
+
+    <div class="vacuum-controls">
+      <button id="tree-next" class="primary">Siguiente split</button>
+      <button id="tree-build-all">Construir todo</button>
+      <button id="tree-reset">↺ Reiniciar</button>
+    </div>
+
+    <div class="vacuum-speed">
+      <span>Profundidad máxima</span>
+      <input type="range" id="tree-depth" min="1" max="6" step="1" value="3" />
+      <span class="mono-value" id="tree-depth-value">3</span>
+    </div>
+
+    <div class="vacuum-stats">
+      <div class="stat-box"><div class="stat-value" id="tree-stat-leaves">1</div><div class="stat-label">Hojas</div></div>
+      <div class="stat-box"><div class="stat-value" id="tree-stat-depth">0</div><div class="stat-label">Profundidad actual</div></div>
+      <div class="stat-box"><div class="stat-value" id="tree-stat-acc">—</div><div class="stat-label">Precisión de entrenamiento</div></div>
+    </div>
+
+    <p class="reveal-hint" id="tree-readout">Aún no se ha hecho ninguna división.</p>
+    <div class="callout warn hidden" id="tree-overfit-warning">
+      <strong>Esto probablemente está sobreajustando:</strong> muchas hojas contienen uno o dos puntos
+      nada más — el árbol dejó de aprender un patrón general y empezó a memorizar puntos individuales
+      (incluido el ruido).
+    </div>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>Cortes codiciosos, medidos con impureza de Gini</h2>
+  <p>
+    En cada nodo, el algoritmo prueba muchos cortes posibles —sobre cada característica, en muchos
+    valores distintos— y elige el que más reduce la <strong>impureza de Gini</strong>: qué tan mezcladas
+    están las clases dentro de un grupo. Un grupo con una sola clase tiene impureza 0; un grupo mitad y
+    mitad tiene impureza alta. El algoritmo es <strong>codicioso (greedy)</strong>: en cada paso elige el
+    mejor corte disponible ahí mismo, sin mirar hacia adelante para ver si otro corte peor ahora
+    permitiría mejores cortes después.
+  </p>
+  <div class="callout accent2">
+    Prueba el conjunto "ruidoso" con profundidad máxima alta. Vas a ver la precisión de entrenamiento
+    subir casi a 100% — pero a costa de crear hojas diminutas que persiguen puntos de ruido individuales.
+    Eso es <strong>sobreajuste (overfitting)</strong>: un modelo que memoriza los datos de entrenamiento en
+    vez de aprender el patrón general, y que probablemente funcionaría mal con datos nuevos.
+  </div>
+  <p>
+    Y a diferencia de la frontera recta del demo anterior, aquí el conjunto "no separable (XOR)" de ese
+    demo sí sería resoluble: combinando varios cortes rectangulares, un árbol puede aproximar fronteras
+    que ninguna recta única puede dibujar.
+  </p>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>¿Por qué "codicioso" (greedy) no siempre encuentra el árbol más pequeño posible que separa perfectamente los datos?</li>
+    <li>¿Qué profundidad máxima te pareció el mejor punto entre explicar bien los datos y no sobreajustar?</li>
+    <li>Un árbol es fácil de explicar como una lista de reglas de sí/no. ¿En qué situaciones reales esa explicabilidad importa más que la pura precisión?</li>
+    <li>¿Cómo limitarías el sobreajuste sin solo bajar la profundidad máxima? (pista: piensa en exigir un mínimo de puntos por hoja)</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  var DOMAIN = { x0: 0, x1: 10, y0: 0, y1: 10 };
+
+  function gaussianPoint(cx, cy, std) {
+    var u = 1 - Math.random(), v = Math.random();
+    var r1 = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    var u2 = 1 - Math.random(), v2 = Math.random();
+    var r2 = Math.sqrt(-2 * Math.log(u2)) * Math.cos(2 * Math.PI * v2);
+    return { x: cx + r1 * std, y: cy + r2 * std };
+  }
+
+  function genClean() {
+    var pts = [];
+    [[2.5, 2.5, 0], [7.5, 2.5, 1], [5, 7.5, 2]].forEach(function (c) {
+      for (var i = 0; i < 14; i++) {
+        var p = gaussianPoint(c[0], c[1], 0.9);
+        pts.push({ x: clamp(p.x), y: clamp(p.y), label: c[2] });
+      }
+    });
+    return pts;
+  }
+
+  function genNoisy() {
+    var pts = [];
+    [[3.5, 3.5, 0], [6.5, 3.5, 1], [5, 7, 2]].forEach(function (c) {
+      for (var i = 0; i < 12; i++) {
+        var p = gaussianPoint(c[0], c[1], 1.6);
+        pts.push({ x: clamp(p.x), y: clamp(p.y), label: c[2] });
+      }
+    });
+    for (var i = 0; i < 8; i++) {
+      pts.push({ x: Math.random() * 10, y: Math.random() * 10, label: Math.floor(Math.random() * 3) });
+    }
+    return pts;
+  }
+
+  function clamp(v) { return Math.max(0.1, Math.min(9.9, v)); }
+
+  var DATASETS = [
+    { id: 'clean', name: 'Grupos separables', gen: genClean },
+    { id: 'noisy', name: 'Ruidoso / entremezclado', gen: genNoisy }
+  ];
+
+  var CLASS_CLASSNAMES = ['class-a', 'class-b', 'class-c'];
+
+  function gini(points) {
+    if (!points.length) return 0;
+    var counts = {};
+    points.forEach(function (p) { counts[p.label] = (counts[p.label] || 0) + 1; });
+    var n = points.length, sum = 0;
+    Object.keys(counts).forEach(function (k) { var pc = counts[k] / n; sum += pc * pc; });
+    return 1 - sum;
+  }
+
+  function majorityClass(points) {
+    var counts = {};
+    points.forEach(function (p) { counts[p.label] = (counts[p.label] || 0) + 1; });
+    var best = null, bestN = -1;
+    Object.keys(counts).forEach(function (k) { if (counts[k] > bestN) { bestN = counts[k]; best = k; } });
+    return best === null ? 0 : parseInt(best, 10);
+  }
+
+  function bestSplit(points) {
+    var n = points.length;
+    var baseGini = gini(points);
+    var best = null;
+    ['x', 'y'].forEach(function (feat) {
+      var vals = Array.from(new Set(points.map(function (p) { return p[feat]; }))).sort(function (a, b) { return a - b; });
+      for (var i = 0; i < vals.length - 1; i++) {
+        var thresh = (vals[i] + vals[i + 1]) / 2;
+        var left = points.filter(function (p) { return p[feat] <= thresh; });
+        var right = points.filter(function (p) { return p[feat] > thresh; });
+        if (!left.length || !right.length) continue;
+        var wGini = (left.length / n) * gini(left) + (right.length / n) * gini(right);
+        var gain = baseGini - wGini;
+        if (!best || gain > best.gain + 1e-9) {
+          best = { feature: feat, threshold: thresh, left: left, right: right, gain: gain, wGini: wGini, baseGini: baseGini };
+        }
+      }
+    });
+    return best;
+  }
+
+  var nodeCounter = 0;
+  function makeNode(points, region, depth) {
+    return {
+      id: nodeCounter++, points: points, region: region, depth: depth,
+      gini: gini(points), majorityClass: majorityClass(points),
+      isLeaf: true, splitFeature: null, splitValue: null, gain: null,
+      left: null, right: null
+    };
+  }
+
+  var state = { datasetIndex: 0, points: [], root: null, pendingQueue: [], maxDepth: 3, selectedNodeId: null };
+
+  function $(id) { return document.getElementById(id); }
+
+  var tabsEl = $('tree-dataset-tabs');
+  var depthInput = $('tree-depth'), depthValue = $('tree-depth-value');
+  var nextBtn = $('tree-next'), buildAllBtn = $('tree-build-all'), resetBtn = $('tree-reset');
+  var statLeaves = $('tree-stat-leaves'), statDepth = $('tree-stat-depth'), statAcc = $('tree-stat-acc');
+  var readout = $('tree-readout');
+  var overfitWarning = $('tree-overfit-warning');
+
+  var margin = { top: 12, right: 12, bottom: 28, left: 36 };
+  var scatterW = 380, scatterH = 340;
+  var sInnerW = scatterW - margin.left - margin.right;
+  var sInnerH = scatterH - margin.top - margin.bottom;
+
+  var scatterSvg = d3.select('#tree-scatter').append('svg')
+    .attr('viewBox', '0 0 ' + scatterW + ' ' + scatterH).attr('width', '100%').attr('height', scatterH);
+  var scatterG = scatterSvg.append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+  var xAxisG = scatterG.append('g').attr('class', 'axis').attr('transform', 'translate(0,' + sInnerH + ')');
+  var yAxisG = scatterG.append('g').attr('class', 'axis');
+  var regionsLayer = scatterG.append('g').attr('class', 'regions-layer');
+  var pointsLayer = scatterG.append('g').attr('class', 'points-layer');
+
+  var xScale = d3.scaleLinear().domain([DOMAIN.x0, DOMAIN.x1]).range([0, sInnerW]);
+  var yScale = d3.scaleLinear().domain([DOMAIN.y0, DOMAIN.y1]).range([sInnerH, 0]);
+  xAxisG.call(d3.axisBottom(xScale).ticks(5));
+  yAxisG.call(d3.axisLeft(yScale).ticks(5));
+
+  var treeW = 380, treeH = 340;
+  var treeSvg = d3.select('#tree-diagram').append('svg')
+    .attr('viewBox', '0 0 ' + treeW + ' ' + treeH).attr('width', '100%').attr('height', treeH);
+  var treeG = treeSvg.append('g').attr('transform', 'translate(8,8)');
+  var linksLayer = treeG.append('g').attr('class', 'links-layer');
+  var nodesLayer = treeG.append('g').attr('class', 'nodes-layer');
+
+  function renderTabs() {
+    tabsEl.innerHTML = '';
+    DATASETS.forEach(function (ds, idx) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'scenario-tab' + (idx === state.datasetIndex ? ' active' : '');
+      btn.textContent = ds.name;
+      btn.addEventListener('click', function () {
+        state.datasetIndex = idx;
+        loadDataset();
+        renderTabs();
+      });
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  function loadDataset() {
+    state.points = DATASETS[state.datasetIndex].gen();
+    resetTree();
+  }
+
+  function resetTree() {
+    nodeCounter = 0;
+    state.maxDepth = parseInt(depthInput.value, 10);
+    state.root = makeNode(state.points, { x0: DOMAIN.x0, x1: DOMAIN.x1, y0: DOMAIN.y0, y1: DOMAIN.y1 }, 0);
+    state.pendingQueue = [state.root];
+    state.selectedNodeId = null;
+    readout.textContent = 'Aún no se ha hecho ninguna división.';
+    overfitWarning.classList.add('hidden');
+    render();
+  }
+
+  function growNext() {
+    while (state.pendingQueue.length) {
+      var node = state.pendingQueue.shift();
+      if (node.depth >= state.maxDepth || node.gini === 0 || node.points.length < 2) continue;
+      var split = bestSplit(node.points);
+      if (!split || split.gain <= 1e-9) continue;
+      node.isLeaf = false;
+      node.splitFeature = split.feature;
+      node.splitValue = split.threshold;
+      node.gain = split.gain;
+      var leftRegion = Object.assign({}, node.region);
+      var rightRegion = Object.assign({}, node.region);
+      if (split.feature === 'x') { leftRegion.x1 = split.threshold; rightRegion.x0 = split.threshold; }
+      else { leftRegion.y1 = split.threshold; rightRegion.y0 = split.threshold; }
+      node.left = makeNode(split.left, leftRegion, node.depth + 1);
+      node.right = makeNode(split.right, rightRegion, node.depth + 1);
+      state.pendingQueue.push(node.left, node.right);
+      return { node: node, split: split };
+    }
+    return null;
+  }
+
+  function collectLeaves(node, out) {
+    if (!node) return out;
+    if (node.isLeaf) out.push(node);
+    else { collectLeaves(node.left, out); collectLeaves(node.right, out); }
+    return out;
+  }
+
+  function treeMaxDepth(node) {
+    if (!node || node.isLeaf) return node ? node.depth : 0;
+    return Math.max(treeMaxDepth(node.left), treeMaxDepth(node.right));
+  }
+
+  function trainingAccuracy() {
+    var leaves = collectLeaves(state.root, []);
+    var total = 0, correct = 0;
+    leaves.forEach(function (leaf) {
+      leaf.points.forEach(function (p) {
+        total++;
+        if (p.label === leaf.majorityClass) correct++;
+      });
+    });
+    return total ? correct / total : 0;
+  }
+
+  function classColor(c) { return CLASS_CLASSNAMES[c] || 'class-a'; }
+
+  function renderRegions() {
+    var leaves = collectLeaves(state.root, []);
+    var sel = regionsLayer.selectAll('rect.leaf-region').data(leaves, function (d) { return d.id; });
+    sel.exit().remove();
+    sel.enter().append('rect').attr('class', 'leaf-region')
+      .on('click', function (event, d) { state.selectedNodeId = state.selectedNodeId === d.id ? null : d.id; render(); })
+      .merge(sel)
+      .attr('x', function (d) { return xScale(d.region.x0); })
+      .attr('y', function (d) { return yScale(d.region.y1); })
+      .attr('width', function (d) { return Math.max(0, xScale(d.region.x1) - xScale(d.region.x0)); })
+      .attr('height', function (d) { return Math.max(0, yScale(d.region.y0) - yScale(d.region.y1)); })
+      .attr('class', function (d) { return 'leaf-region ' + classColor(d.majorityClass) + (d.id === state.selectedNodeId ? ' selected' : ''); })
+      .attr('data-node-id', function (d) { return d.id; });
+  }
+
+  function renderPoints() {
+    var sel = pointsLayer.selectAll('circle.data-point').data(state.points);
+    sel.enter().append('circle').attr('class', 'data-point').attr('r', 4.5)
+      .merge(sel)
+      .attr('cx', function (d) { return xScale(d.x); })
+      .attr('cy', function (d) { return yScale(d.y); })
+      .attr('class', function (d) { return 'data-point ' + classColor(d.label); });
+    sel.exit().remove();
+  }
+
+  function layoutTree(root) {
+    var leafIndex = 0;
+    var positions = {};
+    function assign(node) {
+      if (node.isLeaf) {
+        positions[node.id] = { slot: leafIndex, depth: node.depth };
+        leafIndex++;
+        return positions[node.id].slot;
+      }
+      var lx = assign(node.left);
+      var rx = assign(node.right);
+      var slot = (lx + rx) / 2;
+      positions[node.id] = { slot: slot, depth: node.depth };
+      return slot;
+    }
+    assign(root);
+    return { positions: positions, leafCount: leafIndex };
+  }
+
+  function renderTreeDiagram() {
+    var layout = layoutTree(state.root);
+    var leafCount = Math.max(layout.leafCount, 1);
+    var colW = (treeW - 16) / leafCount;
+    var rowH = 58;
+
+    function px(id) { return layout.positions[id].slot * colW + colW / 2; }
+    function py(id) { return layout.positions[id].depth * rowH + 20; }
+
+    var links = [];
+    var nodes = [];
+    (function walk(node) {
+      nodes.push(node);
+      if (!node.isLeaf) {
+        links.push({ source: node, target: node.left });
+        links.push({ source: node, target: node.right });
+        walk(node.left); walk(node.right);
+      }
+    })(state.root);
+
+    var linkSel = linksLayer.selectAll('line.tree-link').data(links, function (d) { return d.source.id + '-' + d.target.id; });
+    linkSel.exit().remove();
+    linkSel.enter().append('line').attr('class', 'tree-link')
+      .merge(linkSel)
+      .attr('x1', function (d) { return px(d.source.id); }).attr('y1', function (d) { return py(d.source.id); })
+      .attr('x2', function (d) { return px(d.target.id); }).attr('y2', function (d) { return py(d.target.id); });
+
+    var nodeSel = nodesLayer.selectAll('g.tree-node').data(nodes, function (d) { return d.id; });
+    nodeSel.exit().remove();
+    var nodeEnter = nodeSel.enter().append('g').attr('class', 'tree-node')
+      .on('click', function (event, d) { state.selectedNodeId = state.selectedNodeId === d.id ? null : d.id; render(); });
+    nodeEnter.append('rect');
+    nodeEnter.append('text').attr('class', 'tree-node-line1');
+    nodeEnter.append('text').attr('class', 'tree-node-line2');
+
+    var nodeMerged = nodeEnter.merge(nodeSel)
+      .attr('class', function (d) {
+        var cls = 'tree-node ' + (d.isLeaf ? 'leaf ' + classColor(d.majorityClass) : 'internal');
+        if (d.id === state.selectedNodeId) cls += ' selected';
+        return cls;
+      })
+      .attr('transform', function (d) { return 'translate(' + (px(d.id) - 34) + ',' + (py(d.id) - 16) + ')'; });
+
+    nodeMerged.select('rect').attr('width', 68).attr('height', 32).attr('rx', 6);
+    nodeMerged.select('text.tree-node-line1').attr('x', 34).attr('y', 13).attr('text-anchor', 'middle')
+      .text(function (d) { return d.isLeaf ? 'Clase ' + d.majorityClass : (d.splitFeature + ' ≤ ' + d.splitValue.toFixed(1)); });
+    nodeMerged.select('text.tree-node-line2').attr('x', 34).attr('y', 25).attr('text-anchor', 'middle')
+      .text(function (d) { return d.isLeaf ? ('n=' + d.points.length) : ('gini ' + d.gini.toFixed(2)); });
+  }
+
+  function updateStats() {
+    var leaves = collectLeaves(state.root, []);
+    statLeaves.textContent = leaves.length;
+    statDepth.textContent = treeMaxDepth(state.root);
+    statAcc.textContent = Math.round(trainingAccuracy() * 100) + '%';
+    var tinyLeaves = leaves.filter(function (l) { return l.points.length <= 2; }).length;
+    if (leaves.length > 3 && tinyLeaves / leaves.length > 0.3) overfitWarning.classList.remove('hidden');
+    else overfitWarning.classList.add('hidden');
+  }
+
+  function render() {
+    renderRegions();
+    renderPoints();
+    renderTreeDiagram();
+    updateStats();
+  }
+
+  nextBtn.addEventListener('click', function () {
+    var result = growNext();
+    if (!result) { readout.textContent = 'No quedan divisiones que mejoren la pureza (o se alcanzó la profundidad máxima).'; render(); return; }
+    var s = result.split;
+    readout.textContent = 'Se dividió un nodo en ' + s.feature + ' ≤ ' + s.threshold.toFixed(2) +
+      ' — la impureza de Gini bajó de ' + s.baseGini.toFixed(3) + ' a ' + s.wGini.toFixed(3) + '.';
+    render();
+  });
+
+  buildAllBtn.addEventListener('click', function () {
+    var last = null, count = 0;
+    while (true) {
+      var result = growNext();
+      if (!result) break;
+      last = result; count++;
+      if (count > 500) break;
+    }
+    readout.textContent = count > 0
+      ? 'Árbol construido: ' + count + ' división(es) nuevas hasta la profundidad máxima o hasta agotar cortes útiles.'
+      : 'No había divisiones pendientes.';
+    render();
+  });
+
+  resetBtn.addEventListener('click', resetTree);
+  depthInput.addEventListener('input', function () {
+    depthValue.textContent = depthInput.value;
+    resetTree();
+  });
+
+  renderTabs();
+  loadDataset();
+})();
+</script>
