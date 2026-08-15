@@ -1,0 +1,489 @@
+---
+layout: demo
+title: "Robot aspiradora reactivo en grid"
+subtitle: "Un robot real no ve el mapa completo de la casa: solo sabe si la celda donde está parado necesita limpieza. ¿Cómo decide qué hacer con tan poca información?"
+eyebrow: "Módulo 1 · Agentes Inteligentes"
+module: 1
+module_title: "Agentes Inteligentes"
+prev_url: "/modulo-01-agentes/test-turing.html"
+prev_title: "Test de Turing jugable"
+next_url: "/modulo-01-agentes/diseno-peas.html"
+next_title: "Diseñador de PEAS interactivo"
+---
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#simulador">Simulador</a>
+  <a href="#arquitecturas">Arquitecturas</a>
+  <a href="#tipos-entorno">Tipos de entorno</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>Percepción limitada, decisiones en tiempo real</h2>
+  <p>
+    Un robot aspirador real (un Roomba, por ejemplo) no tiene un mapa completo de tu casa cargado de
+    antemano. En cada instante solo cuenta con lo que sus sensores le dicen <strong>en ese momento</strong>:
+    ¿hay suciedad aquí? ¿hay una pared o mueble junto a mí? Con esa información mínima, tiene que decidir
+    qué hacer a continuación — y repetir esa decisión miles de veces por sesión de limpieza.
+  </p>
+  <p>
+    Este es el patrón más básico de <strong>agente inteligente</strong>: algo que <em>percibe</em> su
+    entorno a través de sensores y <em>actúa</em> sobre él a través de actuadores, en un ciclo continuo.
+  </p>
+
+  <div class="turing-diagram">
+    <div class="loop-diagram">
+      <div class="diagram-box">📡<span class="diagram-box-label">Sensores</span></div>
+      <span class="loop-arrow">→</span>
+      <div class="diagram-box">🤖<span class="diagram-box-label">Agente</span></div>
+      <span class="loop-arrow">→</span>
+      <div class="diagram-box">🦾<span class="diagram-box-label">Actuadores</span></div>
+      <span class="loop-arrow">→</span>
+      <div class="diagram-box">🌍<span class="diagram-box-label">Entorno</span></div>
+    </div>
+  </div>
+  <p class="diagram-caption">
+    El entorno cambia por la acción del agente (y a veces por sí solo), lo que produce una nueva
+    percepción — y el ciclo se repite. Abajo vas a programar y observar ese ciclo en vivo.
+  </p>
+
+  <div class="callout">
+    <strong>Agente reactivo (o "reflejo"):</strong> decide su siguiente acción usando solo la percepción
+    <em>actual</em>, sin recordar nada del pasado ni planear el futuro. Es la forma más simple de agente
+    — y, como vas a comprobar, tiene límites reales.
+  </div>
+</section>
+
+<section class="demo-section" id="simulador">
+  <span class="section-kicker">// práctica</span>
+  <h2>Programa al robot y obsérvalo actuar</h2>
+  <p>
+    Haz clic en las celdas para ensuciarlas o limpiarlas (solo mientras está en pausa), elige el tipo de
+    agente y dale play. El panel de la derecha muestra exactamente qué percibe el robot y qué regla aplicó
+    en cada paso.
+  </p>
+
+  <div class="game-panel">
+    <div class="vacuum-layout">
+      <div class="vacuum-grid-wrap">
+        <div class="vacuum-grid" id="vacuum-grid"></div>
+        <p class="game-hint">Clic en una celda = ensuciar / limpiar (solo en pausa).</p>
+      </div>
+
+      <div class="vacuum-side">
+        <div class="vacuum-controls">
+          <select id="vacuum-mode">
+            <option value="simple">Reactivo simple (movimiento aleatorio)</option>
+            <option value="memoria">Reactivo con memoria (barrido sistemático)</option>
+          </select>
+          <button id="vacuum-toggle" class="primary">▶ Iniciar</button>
+          <button id="vacuum-step">⏭ Paso</button>
+          <button id="vacuum-reset">↺ Reiniciar</button>
+        </div>
+        <div class="vacuum-speed">
+          <span>Velocidad</span>
+          <input type="range" id="vacuum-speed" min="80" max="800" value="300" step="20" />
+        </div>
+
+        <div class="vacuum-stats">
+          <div class="stat-box"><div class="stat-value" id="stat-steps">0</div><div class="stat-label">Pasos</div></div>
+          <div class="stat-box"><div class="stat-value" id="stat-cleaned">0</div><div class="stat-label">Limpiadas</div></div>
+          <div class="stat-box"><div class="stat-value" id="stat-remaining">0</div><div class="stat-label">Sucias restantes</div></div>
+        </div>
+
+        <div class="percept-panel">
+          <div class="percept-row"><span>Percepción — suciedad:</span><span id="percept-dirt">—</span></div>
+          <div class="percept-row"><span>Percepción — paredes en:</span><span id="percept-walls">—</span></div>
+          <div class="percept-row"><span>Acción elegida:</span><span id="percept-action">—</span></div>
+        </div>
+
+        <div>
+          <h3 style="margin-top:0;">Reglas condición-acción activas</h3>
+          <ul class="rule-table" id="rule-table"></ul>
+        </div>
+
+        <div class="success-banner hidden" id="vacuum-success"></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-primary" id="vacuum-compare">Comparar ambos agentes (15 cuadrículas aleatorias)</button>
+  <div class="compare-panel hidden" id="compare-panel">
+    <div class="compare-bar-row">
+      <span class="compare-bar-label">Reactivo simple</span>
+      <div class="compare-bar-track"><div class="compare-bar-fill simple" id="compare-simple-fill" style="width:0%"></div></div>
+      <span class="compare-bar-value" id="compare-simple-value">—</span>
+    </div>
+    <div class="compare-bar-row">
+      <span class="compare-bar-label">Reactivo con memoria</span>
+      <div class="compare-bar-track"><div class="compare-bar-fill memoria" id="compare-mem-fill" style="width:0%"></div></div>
+      <span class="compare-bar-value" id="compare-mem-value">—</span>
+    </div>
+    <p class="reveal-hint" id="compare-summary"></p>
+  </div>
+</section>
+
+<section class="demo-section" id="arquitecturas">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>Dos arquitecturas de agente, un mismo problema</h2>
+  <p>
+    <strong>Reactivo simple:</strong> solo tiene una regla — si la celda está sucia, aspira; si no, se
+    mueve en una dirección válida al azar. Nunca recuerda dónde ya estuvo, así que puede visitar la misma
+    celda limpia decenas de veces mientras el resto de la casa sigue sucia.
+  </p>
+  <p>
+    <strong>Reactivo basado en modelo (con memoria):</strong> mantiene un pequeño estado interno — su
+    dirección de barrido actual — que le permite recorrer la cuadrícula en zigzag, fila por fila, sin
+    repetir celdas innecesariamente. No "planea" en el sentido complejo del término, pero ese poco de
+    memoria cambia radicalmente su eficiencia.
+  </p>
+  <div class="callout accent2">
+    Esta comparación es la primera pista de una idea central del curso: un agente más <strong>racional</strong>
+    no es necesariamente el que tiene más inteligencia general, sino el que usa mejor la información
+    disponible para maximizar su medida de desempeño (aquí: menos pasos para limpiar todo).
+  </div>
+</section>
+
+<section class="demo-section" id="tipos-entorno">
+  <span class="section-kicker">// vocabulario clave</span>
+  <h2>Cómo describir un entorno</h2>
+  <p>
+    Antes de diseñar cualquier agente, conviene caracterizar el entorno en el que va a operar. Estas seis
+    dimensiones —aplicadas aquí al mundo de la aspiradora— reaparecen en el próximo demo para varios
+    agentes distintos.
+  </p>
+  <div class="property-grid">
+    <div class="property-card">
+      <h4>Observabilidad</h4>
+      <p>Parcial: el robot solo percibe la celda donde está, no el mapa completo de la casa.</p>
+    </div>
+    <div class="property-card">
+      <h4>Determinismo</h4>
+      <p>Estocástico: personas o mascotas pueden ensuciar celdas ya limpiadas de forma impredecible.</p>
+    </div>
+    <div class="property-card">
+      <h4>Episódico / secuencial</h4>
+      <p>Secuencial: cada movimiento afecta qué zonas quedan por recorrer después.</p>
+    </div>
+    <div class="property-card">
+      <h4>Estático / dinámico</h4>
+      <p>Dinámico: el entorno puede cambiar mientras el robot todavía está decidiendo.</p>
+    </div>
+    <div class="property-card">
+      <h4>Discreto / continuo</h4>
+      <p>Discreto: se modela como una cuadrícula de celdas, no como espacio continuo.</p>
+    </div>
+    <div class="property-card">
+      <h4>Un agente / multiagente</h4>
+      <p>Multiagente: comparte la casa con personas y mascotas que también "actúan" sobre el entorno.</p>
+    </div>
+  </div>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>¿Por qué el agente reactivo simple puede tardar mucho más en terminar, incluso teniendo la misma "inteligencia" de reglas por paso?</li>
+    <li>El agente con memoria solo guarda un dato (su dirección de barrido). ¿Qué otra información mínima podría agregarse para mejorar aún más su desempeño?</li>
+    <li>Si la casa tuviera muebles que bloquean celdas (paredes internas), ¿qué arquitectura de agente dejaría de funcionar bien? ¿Por qué?</li>
+    <li>¿En qué se parece este robot al chatbot del demo anterior? ¿En qué se diferencian como agentes (percepción, acción, entorno)?</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  var ROWS = 6, COLS = 6;
+  var DIR_DELTA = { N: { row: -1, col: 0 }, S: { row: 1, col: 0 }, E: { row: 0, col: 1 }, O: { row: 0, col: -1 } };
+  var DIR_NAME = { N: 'NORTE', S: 'SUR', E: 'ESTE', O: 'OESTE' };
+
+  var RULES = {
+    simple: [
+      { id: 1, text: 'Si la celda actual está SUCIA → ASPIRAR' },
+      { id: 2, text: 'Si está LIMPIA → moverse en una dirección aleatoria válida' }
+    ],
+    memoria: [
+      { id: 1, text: 'Si la celda actual está SUCIA → ASPIRAR' },
+      { id: 2, text: 'Si está LIMPIA y puede seguir en la dirección de barrido → moverse en esa dirección' },
+      { id: 3, text: 'Si llegó al borde → bajar una fila y cambiar de dirección de barrido' },
+      { id: 4, text: 'Si ya recorrió todas las filas → DETENERSE (barrido completo)' }
+    ]
+  };
+
+  var state = {
+    grid: [],
+    agent: { row: 0, col: 0, sweepDir: 1 },
+    mode: 'simple',
+    steps: 0,
+    cleaned: 0,
+    running: false,
+    timer: null,
+    finished: false
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  var gridEl = $('vacuum-grid');
+  var modeSelect = $('vacuum-mode');
+  var toggleBtn = $('vacuum-toggle');
+  var stepBtn = $('vacuum-step');
+  var resetBtn = $('vacuum-reset');
+  var speedSlider = $('vacuum-speed');
+  var stepsStat = $('stat-steps');
+  var cleanedStat = $('stat-cleaned');
+  var remainingStat = $('stat-remaining');
+  var perceptDirt = $('percept-dirt');
+  var perceptWalls = $('percept-walls');
+  var perceptAction = $('percept-action');
+  var ruleTableEl = $('rule-table');
+  var ruleItems = [];
+  var successBanner = $('vacuum-success');
+  var compareBtn = $('vacuum-compare');
+  var comparePanel = $('compare-panel');
+  var cellEls = [];
+
+  function makeRandomGrid(density) {
+    var g = [], any = false;
+    for (var r = 0; r < ROWS; r++) {
+      var row = [];
+      for (var c = 0; c < COLS; c++) {
+        var dirty = Math.random() < density;
+        if (dirty) any = true;
+        row.push(dirty);
+      }
+      g.push(row);
+    }
+    if (!any) g[Math.floor(Math.random() * ROWS)][Math.floor(Math.random() * COLS)] = true;
+    return g;
+  }
+
+  function countDirty(g) {
+    var n = 0;
+    for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) if (g[r][c]) n++;
+    return n;
+  }
+
+  function validDirs(row, col) {
+    var dirs = [];
+    if (row > 0) dirs.push('N');
+    if (row < ROWS - 1) dirs.push('S');
+    if (col < COLS - 1) dirs.push('E');
+    if (col > 0) dirs.push('O');
+    return dirs;
+  }
+
+  function wallsAt(row, col) {
+    var blocked = [];
+    if (row === 0) blocked.push('N');
+    if (row === ROWS - 1) blocked.push('S');
+    if (col === COLS - 1) blocked.push('E');
+    if (col === 0) blocked.push('O');
+    return blocked;
+  }
+
+  function decide(mode, grid, agent) {
+    if (grid[agent.row][agent.col]) return { action: 'suck', rule: 1 };
+    if (mode === 'simple') {
+      var dirs = validDirs(agent.row, agent.col);
+      var dir = dirs[Math.floor(Math.random() * dirs.length)];
+      return { action: 'move', dir: dir, rule: 2 };
+    }
+    var nc = agent.col + agent.sweepDir;
+    if (nc >= 0 && nc < COLS) {
+      return { action: 'move', dir: agent.sweepDir === 1 ? 'E' : 'O', rule: 2 };
+    }
+    var nr = agent.row + 1;
+    if (nr < ROWS) return { action: 'movedownflip', rule: 3 };
+    return { action: 'done', rule: 4 };
+  }
+
+  function applyAction(grid, agent, decision) {
+    if (decision.action === 'suck') {
+      grid[agent.row][agent.col] = false;
+    } else if (decision.action === 'move') {
+      var d = DIR_DELTA[decision.dir];
+      agent.row += d.row; agent.col += d.col;
+    } else if (decision.action === 'movedownflip') {
+      agent.row += 1;
+      agent.sweepDir *= -1;
+    }
+  }
+
+  function runHeadless(mode, density, maxSteps) {
+    var g = makeRandomGrid(density);
+    var a = { row: 0, col: 0, sweepDir: 1 };
+    var s = 0;
+    while (s < maxSteps) {
+      if (countDirty(g) === 0) break;
+      var decision = decide(mode, g, a);
+      if (decision.action === 'done') break;
+      applyAction(g, a, decision);
+      s++;
+    }
+    return { steps: s, completed: countDirty(g) === 0 };
+  }
+
+  function buildGridDOM() {
+    gridEl.innerHTML = '';
+    gridEl.style.gridTemplateColumns = 'repeat(' + COLS + ', 44px)';
+    cellEls = [];
+    for (var r = 0; r < ROWS; r++) {
+      var rowEls = [];
+      for (var c = 0; c < COLS; c++) {
+        var cell = document.createElement('div');
+        cell.className = 'vacuum-cell';
+        cell.dataset.row = r; cell.dataset.col = c;
+        cell.addEventListener('click', onCellClick);
+        gridEl.appendChild(cell);
+        rowEls.push(cell);
+      }
+      cellEls.push(rowEls);
+    }
+  }
+
+  function onCellClick(e) {
+    if (state.running || state.finished) return;
+    var r = parseInt(e.currentTarget.dataset.row, 10);
+    var c = parseInt(e.currentTarget.dataset.col, 10);
+    state.grid[r][c] = !state.grid[r][c];
+    renderGrid();
+    updateStats();
+  }
+
+  function renderGrid() {
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        var cell = cellEls[r][c];
+        cell.classList.toggle('dirty', !!state.grid[r][c]);
+        cell.classList.toggle('agent', state.agent.row === r && state.agent.col === c);
+      }
+    }
+  }
+
+  function actionLabel(decision) {
+    if (decision.action === 'suck') return 'ASPIRAR';
+    if (decision.action === 'move') return 'MOVER AL ' + DIR_NAME[decision.dir];
+    if (decision.action === 'movedownflip') return 'BAJAR Y CAMBIAR DE DIRECCIÓN';
+    return 'DETENERSE';
+  }
+
+  function highlightRule(ruleId) {
+    ruleItems.forEach(function (li) {
+      li.classList.toggle('active-rule', parseInt(li.dataset.rule, 10) === ruleId);
+    });
+  }
+
+  function updateStats() {
+    stepsStat.textContent = state.steps;
+    cleanedStat.textContent = state.cleaned;
+    remainingStat.textContent = countDirty(state.grid);
+  }
+
+  function renderRules(mode) {
+    ruleTableEl.innerHTML = '';
+    RULES[mode].forEach(function (r) {
+      var li = document.createElement('li');
+      li.dataset.rule = r.id;
+      li.textContent = r.text;
+      ruleTableEl.appendChild(li);
+    });
+    ruleItems = Array.prototype.slice.call(ruleTableEl.querySelectorAll('li'));
+  }
+
+  function step() {
+    if (state.finished) return;
+    var dirtyHere = state.grid[state.agent.row][state.agent.col];
+    var walls = wallsAt(state.agent.row, state.agent.col);
+    var decision = decide(state.mode, state.grid, state.agent);
+    if (decision.action === 'done') { finish(); return; }
+    applyAction(state.grid, state.agent, decision);
+    if (decision.action === 'suck') state.cleaned++;
+    state.steps++;
+    renderGrid();
+    perceptDirt.textContent = dirtyHere ? 'SUCIA' : 'LIMPIA';
+    perceptWalls.textContent = walls.length ? walls.join(', ') : 'ninguna';
+    perceptAction.textContent = actionLabel(decision);
+    highlightRule(decision.rule);
+    updateStats();
+    if (countDirty(state.grid) === 0) finish();
+  }
+
+  function finish() {
+    if (state.finished) return;
+    state.finished = true;
+    stopRunning();
+    var modeLabel = state.mode === 'simple' ? 'agente reactivo simple' : 'agente con memoria';
+    successBanner.textContent = '¡Todo limpio en ' + state.steps + ' pasos! (' + modeLabel + ')';
+    successBanner.classList.remove('hidden');
+  }
+
+  function startRunning() {
+    if (state.finished) return;
+    state.running = true;
+    toggleBtn.textContent = '⏸ Pausar';
+    var delay = parseInt(speedSlider.value, 10);
+    state.timer = setInterval(step, delay);
+  }
+
+  function stopRunning() {
+    state.running = false;
+    toggleBtn.textContent = '▶ Iniciar';
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  }
+
+  function resetSimulation() {
+    stopRunning();
+    state.grid = makeRandomGrid(0.35);
+    state.agent = { row: 0, col: 0, sweepDir: 1 };
+    state.steps = 0; state.cleaned = 0; state.finished = false;
+    successBanner.classList.add('hidden');
+    renderGrid();
+    updateStats();
+    perceptDirt.textContent = '—'; perceptWalls.textContent = '—'; perceptAction.textContent = '—';
+    ruleItems.forEach(function (li) { li.classList.remove('active-rule'); });
+  }
+
+  toggleBtn.addEventListener('click', function () {
+    if (state.running) stopRunning(); else startRunning();
+  });
+  stepBtn.addEventListener('click', function () { if (!state.running) step(); });
+  resetBtn.addEventListener('click', resetSimulation);
+  modeSelect.addEventListener('change', function () {
+    state.mode = modeSelect.value;
+    renderRules(state.mode);
+    resetSimulation();
+  });
+  speedSlider.addEventListener('input', function () {
+    if (state.running) { stopRunning(); startRunning(); }
+  });
+
+  compareBtn.addEventListener('click', function () {
+    var trials = 15, density = 0.35, maxSteps = 400;
+    var simpleTotal = 0, memTotal = 0, simpleDone = 0, memDone = 0;
+    for (var i = 0; i < trials; i++) {
+      var rs = runHeadless('simple', density, maxSteps);
+      var rm = runHeadless('memoria', density, maxSteps);
+      simpleTotal += rs.steps; if (rs.completed) simpleDone++;
+      memTotal += rm.steps; if (rm.completed) memDone++;
+    }
+    var simpleAvg = Math.round(simpleTotal / trials);
+    var memAvg = Math.round(memTotal / trials);
+    var maxVal = Math.max(simpleAvg, memAvg, 1);
+    comparePanel.classList.remove('hidden');
+    $('compare-simple-fill').style.width = (simpleAvg / maxVal * 100) + '%';
+    $('compare-mem-fill').style.width = (memAvg / maxVal * 100) + '%';
+    $('compare-simple-value').textContent = simpleAvg + ' pasos';
+    $('compare-mem-value').textContent = memAvg + ' pasos';
+    var ratio = memAvg > 0 ? Math.round((simpleAvg / memAvg) * 10) / 10 : 0;
+    $('compare-summary').textContent = 'Promedio sobre ' + trials + ' cuadrículas aleatorias. El agente con memoria terminó en ' + memDone + '/' + trials + ' corridas dentro del límite; el simple, en ' + simpleDone + '/' + trials + '. El barrido sistemático fue aproximadamente ' + ratio + '× más eficiente en promedio.';
+  });
+
+  buildGridDOM();
+  renderRules(state.mode);
+  resetSimulation();
+})();
+</script>

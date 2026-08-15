@@ -1,0 +1,450 @@
+---
+layout: demo
+title: "Diseñador de PEAS interactivo"
+subtitle: "Antes de escribir una línea de código, todo agente inteligente se puede describir con cuatro preguntas: Rendimiento, Entorno, Actuadores, Sensores."
+eyebrow: "Módulo 1 · Agentes Inteligentes"
+module: 1
+module_title: "Agentes Inteligentes"
+prev_url: "/modulo-01-agentes/robot-aspiradora.html"
+prev_title: "Robot aspiradora reactivo en grid"
+---
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#practica">Practica</a>
+  <a href="#por-que-importa">Por qué importa</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>Cuatro preguntas antes de escribir código</h2>
+  <p>
+    Ya viste dos agentes distintos: un chatbot que intenta pasar por humano y un robot que limpia una
+    casa. Antes de diseñar cualquiera de los dos —o cualquier sistema de IA en general— un ingeniero
+    necesita responder cuatro preguntas concretas. Ese marco se llama <strong>PEAS</strong>:
+  </p>
+  <ul class="debate-list">
+    <li><strong>P — Rendimiento (Performance):</strong> ¿con qué criterio se mide si el agente lo está haciendo bien?</li>
+    <li><strong>E — Entorno (Environment):</strong> ¿en qué mundo opera, y qué partes de ese mundo no controla?</li>
+    <li><strong>A — Actuadores (Actuators):</strong> ¿con qué acciones concretas puede afectar ese mundo?</li>
+    <li><strong>S — Sensores (Sensors):</strong> ¿qué información puede percibir de ese mundo?</li>
+  </ul>
+
+  <h3>Ejemplo resuelto: termostato inteligente</h3>
+  <div class="worked-example">
+    <table class="worked-table">
+      <thead>
+        <tr><th>Rendimiento</th><th>Entorno</th><th>Actuadores</th><th>Sensores</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Mantener la temperatura cerca del valor deseado; ahorrar energía</td>
+          <td>La habitación, su temperatura, personas entrando y saliendo, clima exterior</td>
+          <td>Encender / apagar la calefacción o el aire acondicionado</td>
+          <td>Sensor de temperatura, sensor de presencia, reloj</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Con esa tabla ya podrías empezar a diseñar el algoritmo: sabes qué medir, en qué mundo estás, qué
+    puedes hacer y qué puedes ver. Ahora te toca completarla para seis agentes distintos.
+  </p>
+</section>
+
+<section class="demo-section" id="practica">
+  <span class="section-kicker">// práctica</span>
+  <h2>Clasifica cada elemento en su categoría PEAS</h2>
+  <p>
+    Elige un escenario, haz clic en una tarjeta de la bolsa para seleccionarla y luego haz clic en la
+    columna correcta para colocarla ahí. Si te equivocas de columna, haz clic en la tarjeta ya colocada
+    para devolverla a la bolsa.
+  </p>
+
+  <div class="scenario-tabs" id="scenario-tabs"></div>
+
+  <div class="peas-board" id="peas-board">
+    <div class="chip-pool" id="chip-pool"></div>
+    <div class="peas-columns">
+      <div class="peas-column" data-bucket="P"><h4>🎯 Rendimiento</h4><div class="bucket-list" id="bucket-P"></div></div>
+      <div class="peas-column" data-bucket="E"><h4>🌍 Entorno</h4><div class="bucket-list" id="bucket-E"></div></div>
+      <div class="peas-column" data-bucket="A"><h4>🦾 Actuadores</h4><div class="bucket-list" id="bucket-A"></div></div>
+      <div class="peas-column" data-bucket="S"><h4>📡 Sensores</h4><div class="bucket-list" id="bucket-S"></div></div>
+    </div>
+  </div>
+  <div class="peas-actions">
+    <button id="peas-check">Revisar clasificación</button>
+    <button id="peas-reset" class="ghost">Reordenar de nuevo</button>
+    <span class="peas-score" id="peas-score"></span>
+  </div>
+
+  <h3>Ahora caracteriza el entorno</h3>
+  <p>Para el mismo escenario, elige el lado correcto de cada dimensión.</p>
+  <div class="env-quiz" id="env-quiz"></div>
+  <div class="peas-actions">
+    <button id="env-check">Revisar entorno</button>
+    <span class="peas-score" id="env-score"></span>
+  </div>
+</section>
+
+<section class="demo-section" id="por-que-importa">
+  <span class="section-kicker">// por qué importa</span>
+  <h2>PEAS no es solo un ejercicio de vocabulario</h2>
+  <p>
+    Cómo caractericemos el entorno determina qué tipo de algoritmo tiene sentido usar después. Un entorno
+    <strong>totalmente observable y determinista</strong> (como el ajedrez) permite planear con certeza —
+    de eso trata el Módulo 2 de este curso. Un entorno <strong>parcialmente observable y estocástico</strong>
+    (como manejar un auto) exige razonar bajo incertidumbre y aprender de la experiencia — el territorio
+    de los Módulos 3 y 4.
+  </p>
+  <p>
+    En otras palabras: <strong>definir bien el problema es la mitad del trabajo de diseñar la solución.</strong>
+  </p>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>Para el filtro de spam, ¿por qué el entorno se puede considerar totalmente observable, a diferencia de casi todos los demás casos?</li>
+    <li>¿Qué escenario te costó más clasificar? ¿Por qué crees que fue más ambiguo que los demás?</li>
+    <li>Elige un sistema de IA que uses en tu día a día (buscador, recomendador de videos, asistente de voz). ¿Cómo describirías su PEAS?</li>
+    <li>¿Cambiaría el rendimiento (P) de la aspiradora o el auto autónomo si el "cliente" fuera una empresa en vez de una persona? ¿Por qué importa quién define el éxito de un agente?</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  var SCENARIOS = [
+    {
+      id: 'aspiradora',
+      name: 'Aspiradora autónoma',
+      items: [
+        { text: 'Cantidad de suciedad recogida', bucket: 'P', why: 'Mide qué tan bien logra su objetivo principal: dejar el piso limpio.' },
+        { text: 'Consumo de batería', bucket: 'P', why: 'Un agente racional también debe ser eficiente con sus recursos.' },
+        { text: 'Piso de una casa con muebles y escaleras', bucket: 'E', why: 'Es el mundo físico donde el agente actúa y que no controla.' },
+        { text: 'Personas y mascotas moviéndose', bucket: 'E', why: 'También forman parte del entorno: agregan imprevisibilidad.' },
+        { text: 'Ruedas motorizadas', bucket: 'A', why: 'Mecanismo con el que el agente actúa sobre el entorno: moverse.' },
+        { text: 'Motor de succión', bucket: 'A', why: 'Mecanismo con el que el agente actúa: recoger la suciedad.' },
+        { text: 'Sensor de suciedad', bucket: 'S', why: 'Le permite percibir si la celda actual necesita limpieza.' },
+        { text: 'Sensor de choque', bucket: 'S', why: 'Le permite percibir obstáculos y paredes.' }
+      ],
+      environment: {
+        observable: { correct: 'parcial', rationale: 'Solo percibe la celda donde está, no el mapa completo de la casa.' },
+        deterministic: { correct: 'estocastico', rationale: 'Personas y mascotas se mueven de forma impredecible.' },
+        episodic: { correct: 'secuencial', rationale: 'Cada movimiento afecta qué zonas quedan por limpiar después.' },
+        dynamic: { correct: 'dinamico', rationale: 'El entorno puede cambiar mientras el agente decide su siguiente acción.' },
+        discrete: { correct: 'discreto', rationale: 'Se suele modelar como una cuadrícula de celdas.' },
+        agents: { correct: 'multi', rationale: 'Comparte el espacio con personas y mascotas que también actúan.' }
+      }
+    },
+    {
+      id: 'auto',
+      name: 'Auto autónomo',
+      items: [
+        { text: 'Llegar al destino de forma segura', bucket: 'P', why: 'La seguridad es el criterio de éxito más importante.' },
+        { text: 'Cumplir las leyes de tránsito', bucket: 'P', why: 'Otro criterio con el que se mide un buen desempeño.' },
+        { text: 'Calles, otros vehículos, peatones y semáforos', bucket: 'E', why: 'Es el entorno urbano donde el auto se desenvuelve.' },
+        { text: 'Volante, acelerador y freno motorizados', bucket: 'A', why: 'Mecanismos con los que el auto actúa sobre el mundo.' },
+        { text: 'Direccionales y bocina', bucket: 'A', why: 'También son formas de actuar y comunicarse con el entorno.' },
+        { text: 'Cámaras', bucket: 'S', why: 'Permiten percibir el entorno visualmente.' },
+        { text: 'LIDAR / radar', bucket: 'S', why: 'Permiten medir distancias a otros objetos con precisión.' },
+        { text: 'GPS', bucket: 'S', why: 'Permite percibir la posición del vehículo.' }
+      ],
+      environment: {
+        observable: { correct: 'parcial', rationale: 'Los sensores no ven todo: hay puntos ciegos y obstáculos que tapan la vista.' },
+        deterministic: { correct: 'estocastico', rationale: 'El comportamiento de otros conductores y peatones no es predecible con certeza.' },
+        episodic: { correct: 'secuencial', rationale: 'Cada decisión de manejo afecta las condiciones de las siguientes.' },
+        dynamic: { correct: 'dinamico', rationale: 'El tránsito sigue moviéndose mientras el auto decide qué hacer.' },
+        discrete: { correct: 'continuo', rationale: 'La posición, velocidad y ángulo del volante son valores continuos.' },
+        agents: { correct: 'multi', rationale: 'Comparte la vía con otros conductores, ciclistas y peatones.' }
+      }
+    },
+    {
+      id: 'medico',
+      name: 'Diagnóstico médico',
+      items: [
+        { text: 'Precisión del diagnóstico', bucket: 'P', why: 'Es el objetivo central: acertar en la condición del paciente.' },
+        { text: 'Minimizar falsos negativos graves', bucket: 'P', why: 'No detectar una enfermedad grave tiene un costo muy alto.' },
+        { text: 'Historial clínico y síntomas del paciente', bucket: 'E', why: 'Es la información y el contexto sobre el que opera el sistema.' },
+        { text: 'Pantalla con el diagnóstico sugerido', bucket: 'A', why: 'Es cómo el sistema comunica su decisión al personal médico.' },
+        { text: 'Solicitud de exámenes adicionales', bucket: 'A', why: 'Otra acción posible: pedir más información antes de decidir.' },
+        { text: 'Formulario de síntomas', bucket: 'S', why: 'Es una de las formas en que el sistema recibe información.' },
+        { text: 'Resultados de laboratorio', bucket: 'S', why: 'Dato objetivo que el sistema percibe para decidir.' },
+        { text: 'Imágenes médicas (rayos X, resonancias)', bucket: 'S', why: 'Otra fuente de percepción relevante para el diagnóstico.' }
+      ],
+      environment: {
+        observable: { correct: 'parcial', rationale: 'No todos los síntomas o causas subyacentes son visibles o se reportan.' },
+        deterministic: { correct: 'estocastico', rationale: 'La misma enfermedad puede presentar síntomas distintos en cada persona.' },
+        episodic: { correct: 'episodico', rationale: 'Cada consulta suele evaluarse de forma independiente, sin depender de decisiones anteriores.' },
+        dynamic: { correct: 'estatico', rationale: 'El caso del paciente no suele cambiar drásticamente mientras el sistema analiza.' },
+        discrete: { correct: 'discreto', rationale: 'Existe un conjunto limitado de síntomas y diagnósticos posibles.' },
+        agents: { correct: 'individual', rationale: 'No compite ni coopera directamente con otro agente en la misma tarea.' }
+      }
+    },
+    {
+      id: 'dron',
+      name: 'Dron de reparto',
+      items: [
+        { text: 'Entregar el paquete a tiempo', bucket: 'P', why: 'Es el objetivo principal del servicio.' },
+        { text: 'Minimizar consumo de batería', bucket: 'P', why: 'La eficiencia energética también mide un buen desempeño.' },
+        { text: 'Espacio aéreo urbano con edificios y clima', bucket: 'E', why: 'Es el mundo físico donde el dron vuela.' },
+        { text: 'Motores y hélices', bucket: 'A', why: 'Mecanismo con el que el dron se mueve por el aire.' },
+        { text: 'Mecanismo de liberación del paquete', bucket: 'A', why: 'Acción con la que completa la entrega.' },
+        { text: 'GPS', bucket: 'S', why: 'Le permite ubicarse y seguir la ruta.' },
+        { text: 'Cámara y sensores de proximidad', bucket: 'S', why: 'Le permiten detectar obstáculos.' },
+        { text: 'Anemómetro (sensor de viento)', bucket: 'S', why: 'Le permite percibir condiciones climáticas relevantes para volar.' }
+      ],
+      environment: {
+        observable: { correct: 'parcial', rationale: 'No conoce todo el espacio aéreo, solo lo que sus sensores alcanzan.' },
+        deterministic: { correct: 'estocastico', rationale: 'El viento y el tráfico aéreo introducen incertidumbre.' },
+        episodic: { correct: 'secuencial', rationale: 'Cada tramo de vuelo depende de las decisiones tomadas antes.' },
+        dynamic: { correct: 'dinamico', rationale: 'Otros drones y las condiciones del clima cambian mientras vuela.' },
+        discrete: { correct: 'continuo', rationale: 'Posición, velocidad y altitud son valores continuos.' },
+        agents: { correct: 'multi', rationale: 'Comparte el espacio aéreo con otros drones y aeronaves.' }
+      }
+    },
+    {
+      id: 'spam',
+      name: 'Filtro de spam',
+      items: [
+        { text: 'Maximizar correos spam detectados', bucket: 'P', why: 'Es el objetivo principal del filtro.' },
+        { text: 'Minimizar correos legítimos bloqueados', bucket: 'P', why: 'Un buen filtro también evita falsos positivos.' },
+        { text: 'Bandeja de entrada y flujo de correos', bucket: 'E', why: 'Es el entorno donde opera el filtro.' },
+        { text: 'Mover el correo a la carpeta de spam', bucket: 'A', why: 'Es una de las acciones posibles del filtro.' },
+        { text: 'Dejar el correo en la bandeja de entrada', bucket: 'A', why: 'La otra acción posible: no intervenir.' },
+        { text: 'Texto del correo', bucket: 'S', why: 'Es la información principal que analiza.' },
+        { text: 'Remitente', bucket: 'S', why: 'Dato que ayuda a estimar si el correo es confiable.' },
+        { text: 'Enlaces y archivos adjuntos', bucket: 'S', why: 'Suelen ser señales fuertes de correos maliciosos.' }
+      ],
+      environment: {
+        observable: { correct: 'total', rationale: 'El filtro puede leer el correo completo antes de decidir.' },
+        deterministic: { correct: 'estocastico', rationale: 'Quienes envían spam cambian de táctica constantemente.' },
+        episodic: { correct: 'episodico', rationale: 'Cada correo se clasifica de forma independiente de los anteriores.' },
+        dynamic: { correct: 'estatico', rationale: 'El correo no cambia mientras el filtro lo está evaluando.' },
+        discrete: { correct: 'discreto', rationale: 'La decisión final es una de un conjunto limitado de categorías.' },
+        agents: { correct: 'individual', rationale: 'No negocia ni coordina directamente con otro agente en la misma tarea.' }
+      }
+    },
+    {
+      id: 'ajedrez',
+      name: 'Robot de ajedrez',
+      items: [
+        { text: 'Ganar la partida', bucket: 'P', why: 'Es el objetivo definido por las reglas del juego.' },
+        { text: 'Minimizar el tiempo usado por jugada', bucket: 'P', why: 'En partidas con reloj, la velocidad también cuenta.' },
+        { text: 'Tablero de ajedrez y las piezas', bucket: 'E', why: 'Es el mundo, acotado y bien definido, donde juega.' },
+        { text: 'Brazo robótico que mueve las piezas', bucket: 'A', why: 'Es el mecanismo físico con el que actúa sobre el tablero.' },
+        { text: 'Cámara para reconocer la posición de las piezas', bucket: 'S', why: 'Le permite percibir el estado actual del tablero.' },
+        { text: 'Reloj de ajedrez', bucket: 'S', why: 'Le permite percibir cuánto tiempo le queda.' }
+      ],
+      environment: {
+        observable: { correct: 'total', rationale: 'El tablero completo es visible en todo momento.' },
+        deterministic: { correct: 'deterministico', rationale: 'Las reglas del ajedrez no involucran azar.' },
+        episodic: { correct: 'secuencial', rationale: 'Cada jugada depende directamente de las jugadas anteriores.' },
+        dynamic: { correct: 'estatico', rationale: 'El tablero no cambia mientras el agente está pensando su jugada.' },
+        discrete: { correct: 'discreto', rationale: 'Hay un número finito de casillas y movimientos posibles.' },
+        agents: { correct: 'multi', rationale: 'Compite directamente contra otro jugador.' }
+      }
+    }
+  ];
+
+  var PROPERTY_META = [
+    { key: 'observable', label: '¿Qué tan observable es el entorno?', options: [{ v: 'total', t: 'Totalmente observable' }, { v: 'parcial', t: 'Parcialmente observable' }] },
+    { key: 'deterministic', label: '¿Es determinista o estocástico?', options: [{ v: 'deterministico', t: 'Determinista' }, { v: 'estocastico', t: 'Estocástico' }] },
+    { key: 'episodic', label: '¿Es episódico o secuencial?', options: [{ v: 'episodico', t: 'Episódico' }, { v: 'secuencial', t: 'Secuencial' }] },
+    { key: 'dynamic', label: '¿Es estático o dinámico?', options: [{ v: 'estatico', t: 'Estático' }, { v: 'dinamico', t: 'Dinámico' }] },
+    { key: 'discrete', label: '¿Es discreto o continuo?', options: [{ v: 'discreto', t: 'Discreto' }, { v: 'continuo', t: 'Continuo' }] },
+    { key: 'agents', label: '¿Un solo agente o multiagente?', options: [{ v: 'individual', t: 'Un solo agente' }, { v: 'multi', t: 'Multiagente' }] }
+  ];
+
+  var state = { scenarioIndex: 0, selectedChip: null };
+
+  function $(id) { return document.getElementById(id); }
+  function currentScenario() { return SCENARIOS[state.scenarioIndex]; }
+
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  var tabsEl = $('scenario-tabs');
+  var poolEl = $('chip-pool');
+  var boardEl = $('peas-board');
+  var checkBtn = $('peas-check');
+  var resetBtn = $('peas-reset');
+  var scoreEl = $('peas-score');
+  var envQuizEl = $('env-quiz');
+  var envCheckBtn = $('env-check');
+  var envScoreEl = $('env-score');
+
+  function renderTabs() {
+    tabsEl.innerHTML = '';
+    SCENARIOS.forEach(function (sc, idx) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'scenario-tab' + (idx === state.scenarioIndex ? ' active' : '');
+      btn.textContent = sc.name;
+      btn.addEventListener('click', function () {
+        state.scenarioIndex = idx;
+        renderTabs();
+        renderBoard();
+        renderEnvQuiz();
+      });
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  function makeChip(item) {
+    var chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.dataset.bucket = item.bucket;
+    var label = document.createElement('span');
+    label.className = 'chip-label';
+    label.textContent = item.text;
+    chip.appendChild(label);
+    var why = document.createElement('div');
+    why.className = 'chip-why';
+    why.textContent = item.why;
+    chip.appendChild(why);
+    return chip;
+  }
+
+  function renderBoard() {
+    boardEl.classList.remove('revealed');
+    poolEl.innerHTML = '';
+    ['P', 'E', 'A', 'S'].forEach(function (b) { $('bucket-' + b).innerHTML = ''; });
+    state.selectedChip = null;
+    scoreEl.textContent = '';
+    var items = shuffle(currentScenario().items);
+    items.forEach(function (item) { poolEl.appendChild(makeChip(item)); });
+  }
+
+  function toggleSelect(chip) {
+    if (state.selectedChip === chip) {
+      chip.classList.remove('selected');
+      state.selectedChip = null;
+    } else {
+      if (state.selectedChip) state.selectedChip.classList.remove('selected');
+      chip.classList.add('selected');
+      state.selectedChip = chip;
+    }
+  }
+
+  function returnToPool(chip) {
+    chip.classList.remove('selected', 'correct', 'incorrect');
+    poolEl.appendChild(chip);
+    if (state.selectedChip === chip) state.selectedChip = null;
+  }
+
+  function getChipBucket(chip) {
+    var parent = chip.parentElement;
+    if (!parent || parent === poolEl) return null;
+    return parent.id.replace('bucket-', '');
+  }
+
+  boardEl.addEventListener('click', function (e) {
+    if (boardEl.classList.contains('revealed')) return;
+    var chip = e.target.closest('.chip');
+    var column = e.target.closest('.peas-column');
+    if (chip) {
+      if (chip.parentElement === poolEl) toggleSelect(chip);
+      else returnToPool(chip);
+      return;
+    }
+    if (column && state.selectedChip) {
+      var bucket = column.dataset.bucket;
+      $('bucket-' + bucket).appendChild(state.selectedChip);
+      state.selectedChip.classList.remove('selected');
+      state.selectedChip = null;
+    }
+  });
+
+  checkBtn.addEventListener('click', function () {
+    var chips = boardEl.querySelectorAll('.chip');
+    var correct = 0, total = chips.length;
+    chips.forEach(function (chip) {
+      chip.classList.remove('correct', 'incorrect');
+      var assignedBucket = getChipBucket(chip);
+      if (!assignedBucket) return;
+      if (assignedBucket === chip.dataset.bucket) { chip.classList.add('correct'); correct++; }
+      else chip.classList.add('incorrect');
+    });
+    boardEl.classList.add('revealed');
+    scoreEl.textContent = 'Puntaje: ' + correct + '/' + total;
+  });
+
+  resetBtn.addEventListener('click', renderBoard);
+
+  function renderEnvQuiz() {
+    envQuizEl.classList.remove('revealed');
+    envQuizEl.innerHTML = '';
+    envScoreEl.textContent = '';
+    var env = currentScenario().environment;
+    PROPERTY_META.forEach(function (meta) {
+      var row = document.createElement('div');
+      row.className = 'env-row';
+      row.dataset.key = meta.key;
+      var label = document.createElement('span');
+      label.className = 'env-label';
+      label.textContent = meta.label;
+      row.appendChild(label);
+      var opts = document.createElement('div');
+      opts.className = 'env-options';
+      meta.options.forEach(function (opt) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'env-opt';
+        btn.dataset.value = opt.v;
+        btn.textContent = opt.t;
+        opts.appendChild(btn);
+      });
+      row.appendChild(opts);
+      var rationale = document.createElement('p');
+      rationale.className = 'env-rationale';
+      rationale.textContent = env[meta.key].rationale;
+      row.appendChild(rationale);
+      envQuizEl.appendChild(row);
+    });
+  }
+
+  envQuizEl.addEventListener('click', function (e) {
+    if (envQuizEl.classList.contains('revealed')) return;
+    var btn = e.target.closest('.env-opt');
+    if (!btn) return;
+    var row = btn.closest('.env-row');
+    row.querySelectorAll('.env-opt').forEach(function (o) { o.classList.remove('selected'); });
+    btn.classList.add('selected');
+  });
+
+  envCheckBtn.addEventListener('click', function () {
+    var env = currentScenario().environment;
+    var correct = 0, total = PROPERTY_META.length;
+    envQuizEl.querySelectorAll('.env-row').forEach(function (row) {
+      var key = row.dataset.key;
+      var correctValue = env[key].correct;
+      var selected = row.querySelector('.env-opt.selected');
+      row.querySelectorAll('.env-opt').forEach(function (o) {
+        o.classList.remove('correct', 'incorrect');
+        if (o.dataset.value === correctValue) o.classList.add('correct');
+      });
+      if (selected) {
+        if (selected.dataset.value === correctValue) correct++;
+        else selected.classList.add('incorrect');
+      }
+    });
+    envQuizEl.classList.add('revealed');
+    envScoreEl.textContent = 'Puntaje: ' + correct + '/' + total;
+  });
+
+  renderTabs();
+  renderBoard();
+  renderEnvQuiz();
+})();
+</script>
