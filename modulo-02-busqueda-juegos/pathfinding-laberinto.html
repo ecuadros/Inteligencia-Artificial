@@ -62,6 +62,7 @@ next_title: "Minimax y poda alfa-beta en tres en línea"
           <span class="maze-legend-item"><span class="maze-legend-swatch wall"></span>Pared</span>
           <span class="maze-legend-item"><span class="maze-legend-swatch frontier"></span>Frontera</span>
           <span class="maze-legend-item"><span class="maze-legend-swatch visited"></span>Visitado</span>
+          <span class="maze-legend-item"><span class="maze-legend-swatch current"></span>Nodo actual</span>
           <span class="maze-legend-item"><span class="maze-legend-swatch path"></span>Camino final</span>
           <span class="maze-legend-item"><span class="maze-legend-swatch start"></span>Inicio</span>
           <span class="maze-legend-item"><span class="maze-legend-swatch end"></span>Fin</span>
@@ -179,7 +180,8 @@ next_title: "Minimax y poda alfa-beta en tres en línea"
     timer: null,
     finished: false,
     path: null,
-    visitedCount: 0
+    visitedCount: 0,
+    currentEl: null
   };
 
   function $(id) { return document.getElementById(id); }
@@ -391,9 +393,12 @@ next_title: "Minimax y poda alfa-beta en tres en línea"
   function clearSearchVisuals() {
     stopRunning();
     state.events = []; state.eventIndex = 0; state.finished = false; state.path = null; state.visitedCount = 0; state.visitedSoFar = 0;
+    state.currentEl = null;
     for (var r = 0; r < ROWS; r++) {
       for (var c = 0; c < COLS; c++) {
-        cellEls[r][c].classList.remove('frontier', 'visited', 'path');
+        var cellEl = cellEls[r][c];
+        cellEl.classList.remove('frontier', 'visited', 'path', 'current');
+        cellEl.textContent = '';
       }
     }
     resultBanner.classList.add('hidden');
@@ -414,20 +419,41 @@ next_title: "Minimax y poda alfa-beta en tres en línea"
   function applyEvent(ev) {
     var cell = cellEls[ev.r][ev.c];
     if (sameCell({ r: ev.r, c: ev.c }, state.start) || sameCell({ r: ev.r, c: ev.c }, state.end)) return;
-    if (ev.type === 'frontier') cell.classList.add('frontier');
-    else if (ev.type === 'visit') { cell.classList.remove('frontier'); cell.classList.add('visited'); }
+    if (ev.type === 'frontier') {
+      cell.classList.add('frontier');
+    } else if (ev.type === 'visit') {
+      cell.classList.remove('frontier');
+      cell.classList.add('visited');
+      if (state.currentEl) state.currentEl.classList.remove('current');
+      cell.classList.add('current');
+      state.currentEl = cell;
+    }
+  }
+
+  function arrowTo(from, to) {
+    if (to.r < from.r) return '↑';
+    if (to.r > from.r) return '↓';
+    if (to.c < from.c) return '←';
+    return '→';
   }
 
   function finishRun() {
     stopRunning();
     state.finished = true;
+    if (state.currentEl) { state.currentEl.classList.remove('current'); state.currentEl = null; }
     statExplored.textContent = state.visitedCount;
     var optimalAlgos = { bfs: true, dfs: false, astar: true };
     if (state.path) {
-      state.path.forEach(function (p) {
-        if (!sameCell(p, state.start) && !sameCell(p, state.end)) {
-          cellEls[p.r][p.c].classList.add('path');
-        }
+      state.path.forEach(function (p, i) {
+        if (sameCell(p, state.start) || sameCell(p, state.end)) return;
+        var next = state.path[i + 1];
+        var arrow = next ? arrowTo(p, next) : '';
+        (function (cellEl, delay, text) {
+          setTimeout(function () {
+            cellEl.classList.add('path');
+            cellEl.textContent = text;
+          }, delay);
+        })(cellEls[p.r][p.c], i * 35, arrow);
       });
       statPathLen.textContent = (state.path.length - 1);
       statOptimal.textContent = optimalAlgos[state.algo] ? 'Sí' : 'No';
