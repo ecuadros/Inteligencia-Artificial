@@ -1858,8 +1858,8 @@ details.info-toggle .toggle-body li { margin-bottom: 0.4rem; }
 }
 
 .maze-cell.visited {
-  background: rgba(88, 166, 255, 0.3);
-  box-shadow: inset 0 0 0 1px rgba(88, 166, 255, 0.4);
+  background: #0000ff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
   animation: mazeReveal 0.22s ease-out;
 }
 
@@ -1870,9 +1870,9 @@ details.info-toggle .toggle-body li { margin-bottom: 0.4rem; }
 }
 
 .maze-cell.path {
-  background: var(--accent);
+  background: #ffff00;
   color: #0b1220;
-  box-shadow: 0 0 12px rgba(88, 166, 255, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 12px rgba(255, 255, 0, 0.8), inset 0 0 0 1px rgba(0, 0, 0, 0.35);
   animation: mazePathPop 0.3s ease-out;
   z-index: 1;
 }
@@ -1911,9 +1911,9 @@ details.info-toggle .toggle-body li { margin-bottom: 0.4rem; }
 .maze-legend-swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
 .maze-legend-swatch.wall { background: var(--border); }
 .maze-legend-swatch.frontier { background: rgba(210, 153, 34, 0.7); }
-.maze-legend-swatch.visited { background: rgba(88, 166, 255, 0.4); }
+.maze-legend-swatch.visited { background: #0000ff; }
 .maze-legend-swatch.current { background: var(--surface2); box-shadow: inset 0 0 0 2px #ffffff; }
-.maze-legend-swatch.path { background: var(--accent); }
+.maze-legend-swatch.path { background: #ffff00; }
 .maze-legend-swatch.start { background: var(--accent3); }
 .maze-legend-swatch.end { background: var(--danger); }
 
