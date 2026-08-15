@@ -52,7 +52,7 @@ next_title: "Regresión lineal con descenso de gradiente animado"
     <div class="hill-layout">
       <div class="terrain-col">
         <div class="terrain-wrap" id="terrain-wrap">
-          <div class="terrain-hud" id="terrain-hud">Haz clic en el terreno para elegir un punto de partida.</div>
+          <div class="terrain-hud attention" id="terrain-hud">Haz clic en el terreno para elegir un punto de partida.</div>
         </div>
         <p class="game-hint">Arrastra = rotar cámara · rueda del mouse = zoom · clic en el terreno = punto de partida.</p>
         <div class="maze-legend">
@@ -329,6 +329,7 @@ next_title: "Regresión lineal con descenso de gradiente animado"
     toggleBtn.disabled = false;
     stepBtn.disabled = false;
     toggleBtn.textContent = '▶ Subir la colina';
+    hudEl.classList.remove('attention');
     hudEl.textContent = 'Punto de partida listo — altura ' + h.toFixed(2) + '. Pulsa "Subir la colina".';
   }
 
@@ -380,6 +381,7 @@ next_title: "Regresión lineal con descenso de gradiente animado"
     statHeight.textContent = '—'; statSteps.textContent = '0';
     resultBanner.classList.add('hidden');
     restartsSummary.textContent = '';
+    hudEl.classList.add('attention');
     hudEl.textContent = 'Haz clic en el terreno para elegir un punto de partida.';
   });
 

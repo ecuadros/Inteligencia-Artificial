@@ -1992,6 +1992,14 @@ details.info-toggle .toggle-body li { margin-bottom: 0.4rem; }
   color: var(--text);
   pointer-events: none;
   max-width: 80%;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.terrain-hud.attention {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+  font-weight: 700;
 }
 
 @media (max-width: 720px) {
