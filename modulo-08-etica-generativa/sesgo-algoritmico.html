@@ -1,0 +1,299 @@
+---
+layout: demo
+title: "Demo de sesgo algorítmico"
+subtitle: "Un modelo entrenado con decisiones humanas del pasado no es neutral — hereda exactamente los sesgos de esas decisiones."
+eyebrow: "Módulo 8 · Ética e IA Generativa"
+module: 8
+module_title: "Ética e IA Generativa"
+prev_url: "/modulo-07-nlp/chatbot-llm-api.html"
+prev_title: "Chatbot simple con LLM API"
+next_url: "/modulo-08-etica-generativa/difusion-simplificada.html"
+next_title: "Cómo funciona un modelo de difusión (simplificado)"
+---
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#practica">Práctica</a>
+  <a href="#mecanica">Cómo funciona</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>El algoritmo no inventa el sesgo — lo aprende</h2>
+  <p>
+    Un modelo de aprendizaje supervisado (como los del Módulo 3) hace exactamente lo que le pediste: ajustar
+    sus parámetros para reproducir las etiquetas de entrenamiento lo mejor posible. Si esas etiquetas
+    vienen de decisiones humanas históricas que discriminaron sistemáticamente a un grupo, el modelo
+    aprende a discriminar también — con la ventaja (para quien discrimina, la desventaja para todos los
+    demás) de hacerlo a mayor escala y con una pátina de "objetividad matemática".
+  </p>
+  <p>
+    Este patrón ya ocurrió con sistemas reales: una herramienta interna de selección de personal que una
+    empresa tuvo que abandonar porque penalizaba currículums que mencionaban actividades asociadas a
+    mujeres, y un algoritmo de evaluación de riesgo de reincidencia usado en cortes de EE.UU. que
+    sistemáticamente sobreestimaba el riesgo para acusados afroamericanos. Aquí vas a reproducir el
+    mecanismo con datos sintéticos, para verlo de cerca.
+  </p>
+</section>
+
+<section class="demo-section" id="practica">
+  <span class="section-kicker">// práctica</span>
+  <h2>Entrena, mide la disparidad, intenta mitigarla</h2>
+  <p>
+    El conjunto simula decisiones históricas de contratación: cada candidato tiene una experiencia y un
+    puntaje de examen (correlacionados con su mérito real, que aquí sí podemos medir porque son datos
+    sintéticos) y pertenece al Grupo A o al Grupo B. Las <strong>decisiones históricas</strong> favorecieron
+    al Grupo A más allá de lo que el mérito justificaba — igual que en los casos reales.
+  </p>
+
+  <div class="game-panel">
+    <div class="chart-row">
+      <div class="chart-box">
+        <h3>Candidatos y decisión histórica</h3>
+        <div id="bias-scatter"></div>
+      </div>
+      <div class="chart-box">
+        <h3>Disparidad por grupo</h3>
+        <div id="bias-bars"></div>
+      </div>
+    </div>
+
+    <div class="vacuum-controls">
+      <button id="bias-scenario-full" class="primary">1. Entrenar con el grupo incluido</button>
+      <button id="bias-scenario-noattr">2. Quitar el grupo de las variables</button>
+      <button id="bias-scenario-reweigh">3. Reponderar los datos de entrenamiento</button>
+      <button id="bias-newdata">🎲 Nuevo conjunto de datos</button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-value" id="bias-stat-acc">—</div><div class="stat-label">Precisión global</div></div>
+      <div class="stat-box"><div class="stat-value" id="bias-stat-gapapproval">—</div><div class="stat-label">Brecha de aprobación (A−B)</div></div>
+      <div class="stat-box"><div class="stat-value" id="bias-stat-gaptpr">—</div><div class="stat-label">Brecha en tasa de acierto (A−B)</div></div>
+    </div>
+    <p class="reveal-hint" id="bias-summary"></p>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>Por qué quitar la variable protegida no alcanza</h2>
+  <p>
+    La primera reacción intuitiva es "quitemos el grupo como variable de entrada, así el modelo no puede
+    discriminar por eso". Pruébalo con el botón 2 — la brecha entre grupos <strong>baja, pero está lejos de
+    desaparecer</strong>. La razón: la experiencia medida está correlacionada con el grupo (aquí, a
+    propósito, para simular <strong>variables proxy</strong> — señales que sin ser el atributo protegido
+    directamente, lo predicen bastante bien). El modelo no necesita que le digas el grupo si puede
+    inferirlo, parcialmente, de otras variables.
+  </p>
+  <p>
+    La <strong>reponderación</strong> (botón 3) ataca el problema desde los datos de entrenamiento: le da
+    más peso a los ejemplos de grupos sub-representados en la etiqueta minoritaria, para que el modelo no
+    aprenda a asociar "grupo B" con "rechazado" tan fuertemente. No es la única técnica de mitigación que
+    existe, pero ilustra la idea general: corregir el sesgo requiere una intervención deliberada, nunca
+    ocurre solo.
+  </p>
+  <div class="callout accent2">
+    <strong>Dos nociones de "justo" que compiten:</strong> aquí medimos <em>brecha de aprobación</em>
+    (¿se aprueba al mismo ritmo a ambos grupos?) y <em>brecha en tasa de acierto</em> (¿el modelo acierta
+    igual de bien identificando candidatos realmente calificados en ambos grupos?). En general, un modelo
+    no puede igualar ambas métricas a la vez si las tasas base de calificación difieren — elegir cuál
+    priorizar es una decisión de valores, no solo de matemática.
+  </div>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>¿Qué otras variables "proxy" del mundo real podrían filtrar información sobre género, raza o nivel socioeconómico sin mencionarlos directamente?</li>
+    <li>Si tuvieras que elegir entre reducir la brecha de aprobación o la brecha en tasa de acierto, y no puedes reducir ambas a la vez, ¿cómo decidirías cuál priorizar para un sistema de selección de personal?</li>
+    <li>¿Quién debería ser responsable de auditar un sistema como este antes de ponerlo en producción — el equipo que lo construyó, un equipo independiente, un regulador externo?</li>
+    <li>Los casos reales mencionados arriba se descubrieron después de que las herramientas ya estaban en uso. ¿Qué señales de alerta, medidas desde el principio, podrían haberlos detectado antes?</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  function mulberry32(a) {
+    return function () {
+      var t = (a += 0x6D2B79F5);
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var rnd = mulberry32(Date.now() % 1e9);
+  function gauss() { var u = 1 - rnd(), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+  function sigmoid(z) { return 1 / (1 + Math.exp(-z)); }
+
+  var N = 260;
+  var candidates = [];
+
+  function genData() {
+    candidates = [];
+    for (var i = 0; i < N; i++) {
+      var group = rnd() < 0.5 ? 'A' : 'B';
+      var merit = gauss();
+      var score = merit * 0.8 + gauss() * 0.6;
+      var experience = merit * 0.8 + gauss() * 0.6 + (group === 'B' ? -0.5 : 0.1);
+      var historicalZ = 1.1 * merit + 0.5 * experience - (group === 'B' ? 1.2 : 0);
+      var historicalApproved = rnd() < sigmoid(historicalZ) ? 1 : 0;
+      var qualified = merit > 0;
+      candidates.push({ group: group, merit: merit, score: score, experience: experience, historicalApproved: historicalApproved, qualified: qualified });
+    }
+  }
+  genData();
+
+  function trainLogReg(features, weights) {
+    var nFeat = features[0].length;
+    var w = new Array(nFeat).fill(0);
+    var b = 0;
+    var lr = 0.3;
+    for (var epoch = 0; epoch < 400; epoch++) {
+      var gw = new Array(nFeat).fill(0);
+      var gb = 0;
+      for (var i = 0; i < candidates.length; i++) {
+        var x = features[i];
+        var z = b;
+        for (var f = 0; f < nFeat; f++) z += w[f] * x[f];
+        var pred = sigmoid(z);
+        var err = (pred - candidates[i].historicalApproved) * (weights ? weights[i] : 1);
+        for (var f2 = 0; f2 < nFeat; f2++) gw[f2] += err * x[f2];
+        gb += err;
+      }
+      for (var f3 = 0; f3 < nFeat; f3++) w[f3] -= lr * gw[f3] / candidates.length;
+      b -= lr * gb / candidates.length;
+    }
+    return { w: w, b: b };
+  }
+
+  function featuresFull(c) { return [c.score, c.experience, c.group === 'B' ? 1 : 0]; }
+  function featuresNoAttr(c) { return [c.score, c.experience]; }
+
+  function computeReweighing() {
+    var groups = ['A', 'B'];
+    var labels = [0, 1];
+    var overallRate = d3.mean(candidates, function (c) { return c.historicalApproved; });
+    var weights = candidates.map(function (c) {
+      var groupCands = candidates.filter(function (d) { return d.group === c.group; });
+      var groupRate = d3.mean(groupCands, function (d) { return d.historicalApproved; });
+      if (c.historicalApproved === 1) return overallRate / Math.max(0.02, groupRate);
+      return (1 - overallRate) / Math.max(0.02, 1 - groupRate);
+    });
+    return weights;
+  }
+
+  var currentScenario = 'full';
+
+  function runScenario(scenario) {
+    currentScenario = scenario;
+    var features, weights = null, model;
+    if (scenario === 'full') { features = candidates.map(featuresFull); }
+    else if (scenario === 'noattr') { features = candidates.map(featuresNoAttr); }
+    else { features = candidates.map(featuresFull); weights = computeReweighing(); }
+
+    model = trainLogReg(features, weights);
+
+    var preds = candidates.map(function (c, i) {
+      var x = features[i];
+      var z = model.b;
+      for (var f = 0; f < x.length; f++) z += model.w[f] * x[f];
+      return sigmoid(z) >= 0.5 ? 1 : 0;
+    });
+
+    var acc = d3.mean(preds, function (p, i) { return p === candidates[i].historicalApproved ? 1 : 0; });
+
+    function groupStats(g) {
+      var idx = candidates.map(function (c, i) { return i; }).filter(function (i) { return candidates[i].group === g; });
+      var approvalRate = d3.mean(idx, function (i) { return preds[i]; });
+      var qualifiedIdx = idx.filter(function (i) { return candidates[i].qualified; });
+      var tpr = qualifiedIdx.length ? d3.mean(qualifiedIdx, function (i) { return preds[i]; }) : 0;
+      return { approvalRate: approvalRate, tpr: tpr };
+    }
+    var statsA = groupStats('A'), statsB = groupStats('B');
+
+    renderScatter(preds);
+    renderBars(statsA, statsB);
+
+    $('bias-stat-acc').textContent = Math.round(acc * 100) + '%';
+    $('bias-stat-gapapproval').textContent = Math.round((statsA.approvalRate - statsB.approvalRate) * 100) + ' pp';
+    $('bias-stat-gaptpr').textContent = Math.round((statsA.tpr - statsB.tpr) * 100) + ' pp';
+
+    var scenarioNames = { full: 'con el grupo incluido como variable', noattr: 'sin el grupo como variable', reweigh: 'con los datos reponderados' };
+    $('bias-summary').textContent = 'Entrenado ' + scenarioNames[scenario] + '. Brecha de aprobación: ' +
+      Math.round((statsA.approvalRate - statsB.approvalRate) * 100) + ' puntos porcentuales a favor del Grupo A. ' +
+      (scenario === 'noattr' ? 'Nota que quitar el grupo redujo la brecha, pero no la eliminó — la experiencia sigue actuando como variable proxy del grupo.' :
+        scenario === 'reweigh' ? 'La reponderación redujo la brecha aún más, pero comparada con el escenario 1 — sigue sin llegar a cero.' : 'Este es el punto de partida, replicando el sesgo histórico.');
+  }
+
+  function $(id) { return document.getElementById(id); }
+
+  var margin = { top: 16, right: 16, bottom: 32, left: 40 };
+  var width = 480, height = 380;
+  var innerW = width - margin.left - margin.right;
+  var innerH = height - margin.top - margin.bottom;
+
+  var scatterSvg = d3.select('#bias-scatter').append('svg')
+    .attr('viewBox', '0 0 ' + width + ' ' + height).attr('width', '100%').attr('height', height);
+  var sg = scatterSvg.append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+  var xAxisG = sg.append('g').attr('class', 'axis').attr('transform', 'translate(0,' + innerH + ')');
+  var yAxisG = sg.append('g').attr('class', 'axis');
+  var xScale = d3.scaleLinear().domain([-3, 3]).range([0, innerW]);
+  var yScale = d3.scaleLinear().domain([-3, 3]).range([innerH, 0]);
+  xAxisG.call(d3.axisBottom(xScale).ticks(5));
+  yAxisG.call(d3.axisLeft(yScale).ticks(5));
+  sg.append('text').attr('x', innerW / 2).attr('y', innerH + 30).attr('text-anchor', 'middle').style('fill', 'var(--muted)').style('font-size', '11px').text('Puntaje de examen');
+  sg.append('text').attr('transform', 'rotate(-90)').attr('x', -innerH / 2).attr('y', -26).attr('text-anchor', 'middle').style('fill', 'var(--muted)').style('font-size', '11px').text('Experiencia');
+
+  function renderScatter(preds) {
+    var sel = sg.selectAll('circle.data-point').data(candidates);
+    sel.enter().append('circle').attr('class', 'data-point').attr('r', 4)
+      .merge(sel)
+      .attr('cx', function (d) { return xScale(d.score); })
+      .attr('cy', function (d) { return yScale(d.experience); })
+      .attr('class', function (d, i) {
+        var predicted = preds[i];
+        var cls = d.group === 'A' ? (predicted ? 'cluster-0' : 'cluster-3') : (predicted ? 'cluster-2' : 'cluster-4');
+        return 'data-point ' + cls;
+      });
+    sel.exit().remove();
+  }
+
+  var barsSvg = d3.select('#bias-bars').append('svg')
+    .attr('viewBox', '0 0 480 380').attr('width', '100%').attr('height', 380);
+
+  function renderBars(statsA, statsB) {
+    barsSvg.selectAll('*').remove();
+    var metrics = [
+      { label: 'Tasa de aprobación', a: statsA.approvalRate, b: statsB.approvalRate },
+      { label: 'Tasa de acierto (mérito real)', a: statsA.tpr, b: statsB.tpr }
+    ];
+    var barH = 26, gap = 60, top = 40;
+    metrics.forEach(function (m, i) {
+      var y0 = top + i * (barH * 2 + gap);
+      barsSvg.append('text').attr('x', 10).attr('y', y0 - 10).text(m.label).style('fill', 'var(--text)').style('font-size', '13px').style('font-weight', 600);
+
+      barsSvg.append('rect').attr('x', 90).attr('y', y0).attr('height', barH).attr('width', m.a * 350).attr('fill', 'var(--accent)').attr('rx', 4);
+      barsSvg.append('text').attr('x', 10).attr('y', y0 + barH / 2 + 4).text('Grupo A').style('fill', 'var(--muted)').style('font-size', '12px').style('font-family', 'var(--font-mono)');
+      barsSvg.append('text').attr('x', 90 + m.a * 350 + 8).attr('y', y0 + barH / 2 + 4).text(Math.round(m.a * 100) + '%').style('fill', 'var(--text)').style('font-size', '12px').style('font-family', 'var(--font-mono)');
+
+      var y1 = y0 + barH + 8;
+      barsSvg.append('rect').attr('x', 90).attr('y', y1).attr('height', barH).attr('width', m.b * 350).attr('fill', 'var(--accent2)').attr('rx', 4);
+      barsSvg.append('text').attr('x', 10).attr('y', y1 + barH / 2 + 4).text('Grupo B').style('fill', 'var(--muted)').style('font-size', '12px').style('font-family', 'var(--font-mono)');
+      barsSvg.append('text').attr('x', 90 + m.b * 350 + 8).attr('y', y1 + barH / 2 + 4).text(Math.round(m.b * 100) + '%').style('fill', 'var(--text)').style('font-size', '12px').style('font-family', 'var(--font-mono)');
+    });
+  }
+
+  $('bias-scenario-full').addEventListener('click', function () { runScenario('full'); });
+  $('bias-scenario-noattr').addEventListener('click', function () { runScenario('noattr'); });
+  $('bias-scenario-reweigh').addEventListener('click', function () { runScenario('reweigh'); });
+  $('bias-newdata').addEventListener('click', function () { genData(); runScenario(currentScenario); });
+
+  runScenario('full');
+})();
+</script>

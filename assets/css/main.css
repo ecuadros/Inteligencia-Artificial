@@ -2205,16 +2205,17 @@ details.info-toggle .toggle-body li { margin-bottom: 0.4rem; }
 
 .kernel-cell:focus { outline: none; border-color: var(--accent); }
 
-.conv-swatch-btn {
+button.conv-swatch-btn {
   width: 22px;
   height: 22px;
+  min-width: 0;
   border-radius: 50%;
   border: 2px solid var(--border);
   cursor: pointer;
   padding: 0;
 }
 
-.conv-swatch-btn.active { border-color: #fff; box-shadow: 0 0 0 2px var(--accent); }
+button.conv-swatch-btn.active { border-color: #fff; box-shadow: 0 0 0 2px var(--accent); }
 
 .feature-map-grid {
   display: grid;

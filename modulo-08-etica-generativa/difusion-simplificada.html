@@ -1,0 +1,301 @@
+---
+layout: demo
+title: "Cómo funciona un modelo de difusión (simplificado)"
+subtitle: "Generar una imagen desde cero resulta ser, matemáticamente, lo opuesto de destruirla poco a poco con ruido."
+eyebrow: "Módulo 8 · Ética e IA Generativa"
+module: 8
+module_title: "Ética e IA Generativa"
+prev_url: "/modulo-08-etica-generativa/sesgo-algoritmico.html"
+prev_title: "Demo de sesgo algorítmico"
+---
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#practica">Práctica</a>
+  <a href="#mecanica">Cómo funciona</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>¿Cómo se le enseña a una red a "dibujar de la nada"?</h2>
+  <p>
+    Los modelos que generan imágenes a partir de texto (Stable Diffusion, Midjourney, DALL·E) no dibujan
+    trazo por trazo como una persona. Empiezan con <strong>ruido puro</strong> — como la nieve de una
+    televisión sin señal — y lo van "limpiando" paso a paso hasta que aparece una imagen coherente.
+  </p>
+  <p>
+    La idea clave, y la razón por la que esto es entrenable, es que resulta mucho más fácil enseñarle a una
+    red a hacer una tarea pequeña y repetible (<em>"dado este ruido, adivina qué parte es ruido y
+    quítala un poco"</em>) que enseñarle a generar una imagen completa de un solo salto.
+  </p>
+</section>
+
+<section class="demo-section" id="practica">
+  <span class="section-kicker">// práctica</span>
+  <h2>Destruye una imagen con ruido, luego obsérvala "renacer"</h2>
+  <p>
+    Dibuja algo simple (o carga la escena de ejemplo). Pulsa "Difundir" para ver cómo, paso a paso, se
+    convierte en ruido puro. Luego pulsa "Generar" para ver el camino de regreso.
+  </p>
+
+  <div class="game-panel">
+    <div class="chart-row">
+      <div class="chart-box" style="flex: 0 1 240px;">
+        <h3>Original</h3>
+        <div class="digit-canvas-wrap">
+          <canvas id="dif-source" width="180" height="180"></canvas>
+        </div>
+        <div class="demo-controls" style="margin-top:0.6rem;">
+          <span class="mono-value">Color:</span>
+          <button type="button" class="conv-swatch-btn active" data-color="#ffffff" style="background:#ffffff;"></button>
+          <button type="button" class="conv-swatch-btn" data-color="#f85149" style="background:#f85149;"></button>
+          <button type="button" class="conv-swatch-btn" data-color="#58a6ff" style="background:#58a6ff;"></button>
+          <button type="button" class="conv-swatch-btn" data-color="#ffee00" style="background:#ffee00;"></button>
+        </div>
+        <div class="demo-controls">
+          <button id="dif-clear">🧹 Borrar</button>
+          <button id="dif-scene">🎨 Escena de ejemplo</button>
+        </div>
+      </div>
+
+      <div class="chart-box" style="flex: 0 1 240px;">
+        <h3>Difusión hacia adelante</h3>
+        <div class="digit-canvas-wrap">
+          <canvas id="dif-forward" width="180" height="180"></canvas>
+        </div>
+        <p class="game-hint" id="dif-forward-hint">Paso 0 / 30</p>
+      </div>
+
+      <div class="chart-box" style="flex: 0 1 240px;">
+        <h3>Reconstrucción (paso inverso)</h3>
+        <div class="digit-canvas-wrap">
+          <canvas id="dif-reverse" width="180" height="180"></canvas>
+        </div>
+        <p class="game-hint" id="dif-reverse-hint">Sin empezar.</p>
+      </div>
+    </div>
+
+    <div class="vacuum-controls">
+      <button id="dif-forward-btn" class="primary">▶ Difundir (agregar ruido)</button>
+      <button id="dif-reverse-btn" class="primary">▶ Generar (quitar ruido)</button>
+      <button id="dif-new-noise">🎲 Nuevo ruido</button>
+    </div>
+    <div class="demo-speed">
+      <span>Velocidad</span>
+      <input type="range" id="dif-speed" min="20" max="200" value="80" step="20" />
+    </div>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>Ida: mezclar con ruido. Vuelta: adivinar qué era ruido</h2>
+  <p>
+    El proceso "hacia adelante" tiene una fórmula cerrada y simple: en el paso <code>t</code>, la imagen
+    ruidosa es <code>x_t = √(ᾱ_t)·x₀ + √(1−ᾱ_t)·ruido</code>, donde <code>ᾱ_t</code> baja suavemente de 1
+    (nada de ruido) a casi 0 (ruido puro) a medida que <code>t</code> avanza. No hace falta ninguna red
+    neuronal para esta dirección — es solo álgebra.
+  </p>
+  <p>
+    La dirección inversa es la difícil: dado <code>x_t</code> (ruidoso), predecir qué ruido se le agregó
+    para poder restarlo. <strong>Ahí es donde entrena una red neuronal real</strong> — ve millones de pares
+    (imagen ruidosa, ruido que se le agregó) y aprende a estimar el ruido en cualquier imagen nueva.
+  </p>
+  <div class="callout accent2">
+    <strong>La trampa de este demo:</strong> entrenar esa red de verdad está fuera del alcance de un
+    navegador. Aquí "Generar" no adivina el ruido — hace trampa y usa la fórmula hacia adelante en reversa,
+    porque ya conocemos tu dibujo original. Un modelo real nunca ve la imagen final durante la generación;
+    solo tiene su propia predicción del ruido, paso a paso, entrenada de antemano sobre millones de
+    imágenes reales.
+  </div>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>¿Por qué crees que es más fácil entrenar una red para "quitar un poco de ruido" que para "generar la imagen completa de un tirón"?</li>
+    <li>Si la reconstrucción real no puede ver la imagen original (a diferencia de este demo), ¿de dónde saca la variedad para generar imágenes distintas cada vez a partir del mismo texto?</li>
+    <li>¿Qué relación ves entre "predecir el ruido en cada paso" aquí y "predecir el siguiente token" en un modelo de lenguaje como el del demo del chatbot?</li>
+    <li>Un modelo de difusión entrenado sobre millones de imágenes de internet puede reproducir sesgos de esos datos (por ejemplo, asociar ciertas profesiones con un género). ¿Qué relación tiene esto con el demo de sesgo algorítmico de esta misma sección?</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  var GRID = 48;
+  var T = 30;
+
+  function $(id) { return document.getElementById(id); }
+
+  var sourceCanvas = $('dif-source');
+  var sctx = sourceCanvas.getContext('2d', { willReadFrequently: true });
+  var forwardCanvas = $('dif-forward');
+  var fctx = forwardCanvas.getContext('2d');
+  var reverseCanvas = $('dif-reverse');
+  var rctx = reverseCanvas.getContext('2d');
+  var forwardHint = $('dif-forward-hint');
+  var reverseHint = $('dif-reverse-hint');
+  var speedSlider = $('dif-speed');
+
+  var state = { color: '#ffffff', drawing: false, lastPos: null, forwardTimer: null, reverseTimer: null };
+
+  function initSource() {
+    sctx.fillStyle = '#000';
+    sctx.fillRect(0, 0, sourceCanvas.width, sourceCanvas.height);
+  }
+  initSource();
+
+  function canvasPos(e) {
+    var rect = sourceCanvas.getBoundingClientRect();
+    var cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    var cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    return { x: cx * (sourceCanvas.width / rect.width), y: cy * (sourceCanvas.height / rect.height) };
+  }
+  function startDraw(e) { e.preventDefault(); state.drawing = true; state.lastPos = canvasPos(e); }
+  function moveDraw(e) {
+    if (!state.drawing) return;
+    e.preventDefault();
+    var p = canvasPos(e);
+    sctx.strokeStyle = state.color;
+    sctx.lineWidth = 14;
+    sctx.lineCap = 'round';
+    sctx.lineJoin = 'round';
+    sctx.beginPath();
+    sctx.moveTo(state.lastPos.x, state.lastPos.y);
+    sctx.lineTo(p.x, p.y);
+    sctx.stroke();
+    state.lastPos = p;
+  }
+  function endDraw() { state.drawing = false; }
+
+  sourceCanvas.addEventListener('mousedown', startDraw);
+  sourceCanvas.addEventListener('mousemove', moveDraw);
+  window.addEventListener('mouseup', endDraw);
+  sourceCanvas.addEventListener('touchstart', startDraw, { passive: false });
+  sourceCanvas.addEventListener('touchmove', moveDraw, { passive: false });
+  sourceCanvas.addEventListener('touchend', endDraw);
+
+  Array.prototype.forEach.call(document.querySelectorAll('.conv-swatch-btn'), function (btn) {
+    btn.addEventListener('click', function () {
+      state.color = btn.dataset.color;
+      Array.prototype.forEach.call(document.querySelectorAll('.conv-swatch-btn'), function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+    });
+  });
+
+  $('dif-clear').addEventListener('click', initSource);
+  $('dif-scene').addEventListener('click', function () {
+    initSource();
+    sctx.fillStyle = '#ffee00';
+    sctx.beginPath(); sctx.arc(90, 90, 55, 0, Math.PI * 2); sctx.fill();
+    sctx.fillStyle = '#000';
+    sctx.beginPath(); sctx.arc(70, 75, 8, 0, Math.PI * 2); sctx.fill();
+    sctx.beginPath(); sctx.arc(110, 75, 8, 0, Math.PI * 2); sctx.fill();
+    sctx.strokeStyle = '#000';
+    sctx.lineWidth = 6;
+    sctx.beginPath(); sctx.arc(90, 95, 25, 0.15 * Math.PI, 0.85 * Math.PI); sctx.stroke();
+  });
+
+  function getGrid() {
+    var off = document.createElement('canvas');
+    off.width = GRID; off.height = GRID;
+    var octx = off.getContext('2d');
+    octx.imageSmoothingEnabled = true;
+    octx.drawImage(sourceCanvas, 0, 0, GRID, GRID);
+    var data = octx.getImageData(0, 0, GRID, GRID).data;
+    var rgb = [];
+    for (var i = 0; i < GRID * GRID; i++) rgb.push([data[i * 4] / 255, data[i * 4 + 1] / 255, data[i * 4 + 2] / 255]);
+    return rgb;
+  }
+
+  function mulberry32(a) {
+    return function () {
+      var t = (a += 0x6D2B79F5);
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var noiseRnd = mulberry32(Date.now() % 1e9);
+  function gauss() { var u = 1 - noiseRnd(), v = noiseRnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+
+  var noise = null;
+  function regenerateNoise() {
+    noise = [];
+    for (var i = 0; i < GRID * GRID; i++) noise.push([gauss(), gauss(), gauss()]);
+  }
+  regenerateNoise();
+
+  function alphaBar(t) {
+    var frac = t / T;
+    return Math.pow(Math.cos(frac * Math.PI / 2), 2);
+  }
+
+  function renderNoisy(ctx, x0, t) {
+    var ab = alphaBar(t);
+    var sqrtAb = Math.sqrt(ab), sqrtOneMinus = Math.sqrt(1 - ab);
+    var img = document.createElement('canvas');
+    img.width = GRID; img.height = GRID;
+    var ictx = img.getContext('2d');
+    var imgData = ictx.createImageData(GRID, GRID);
+    for (var i = 0; i < GRID * GRID; i++) {
+      for (var c = 0; c < 3; c++) {
+        var v = sqrtAb * x0[i][c] + sqrtOneMinus * noise[i][c] * 0.5;
+        v = Math.max(0, Math.min(1, v));
+        imgData.data[i * 4 + c] = Math.round(v * 255);
+      }
+      imgData.data[i * 4 + 3] = 255;
+    }
+    ictx.putImageData(imgData, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.drawImage(img, 0, 0, ctx.canvas.width, ctx.canvas.height);
+  }
+
+  function stopForward() {
+    if (state.forwardTimer) { clearInterval(state.forwardTimer); state.forwardTimer = null; }
+    $('dif-forward-btn').textContent = '▶ Difundir (agregar ruido)';
+  }
+  function stopReverse() {
+    if (state.reverseTimer) { clearInterval(state.reverseTimer); state.reverseTimer = null; }
+    $('dif-reverse-btn').textContent = '▶ Generar (quitar ruido)';
+  }
+
+  $('dif-forward-btn').addEventListener('click', function () {
+    if (state.forwardTimer) { stopForward(); return; }
+    var x0 = getGrid();
+    var t = 0;
+    $('dif-forward-btn').textContent = '⏸ Detener';
+    var delay = 220 - parseInt(speedSlider.value, 10);
+    state.forwardTimer = setInterval(function () {
+      renderNoisy(fctx, x0, t);
+      forwardHint.textContent = 'Paso ' + t + ' / ' + T;
+      t++;
+      if (t > T) stopForward();
+    }, Math.max(delay, 20));
+  });
+
+  $('dif-reverse-btn').addEventListener('click', function () {
+    if (state.reverseTimer) { stopReverse(); return; }
+    var x0 = getGrid();
+    var t = T;
+    $('dif-reverse-btn').textContent = '⏸ Detener';
+    var delay = 220 - parseInt(speedSlider.value, 10);
+    state.reverseTimer = setInterval(function () {
+      renderNoisy(rctx, x0, t);
+      reverseHint.textContent = 'Paso ' + t + ' / ' + T + (t === 0 ? ' — reconstrucción completa' : '');
+      t--;
+      if (t < 0) stopReverse();
+    }, Math.max(delay, 20));
+  });
+
+  $('dif-new-noise').addEventListener('click', function () {
+    noiseRnd = mulberry32(Math.floor(Math.random() * 1e9));
+    regenerateNoise();
+  });
+})();
+</script>
