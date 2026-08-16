@@ -1,0 +1,275 @@
+---
+layout: demo
+title: "Mapa de atención de un mini-transformer"
+subtitle: "¿Cómo decide un modelo a qué palabra de la oración 'prestarle atención' al procesar cada palabra?"
+eyebrow: "Módulo 7 · Procesamiento de Lenguaje Natural"
+module: 7
+module_title: "Procesamiento de Lenguaje Natural"
+prev_url: "/modulo-07-nlp/embeddings-visualizador.html"
+prev_title: "Visualizador de embeddings de palabras"
+next_url: "/modulo-07-nlp/chatbot-llm-api.html"
+next_title: "Chatbot simple con LLM API"
+---
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#practica">Práctica</a>
+  <a href="#mecanica">Cómo funciona</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>"Su" — ¿su de quién?</h2>
+  <p>
+    En la oración "el perro persiguió al gato porque <em>estaba</em> asustado", ¿"estaba" se refiere al
+    perro o al gato? Para responder bien, un modelo de lenguaje necesita poder mirar <em>otras palabras
+    de la misma oración</em> y decidir cuáles son relevantes para entender la palabra actual — no
+    solo la palabra inmediatamente anterior, sino cualquiera, sin importar qué tan lejos esté.
+  </p>
+  <p>
+    Eso es exactamente lo que hace el mecanismo de <strong>atención</strong>, el corazón de los
+    transformers (la arquitectura detrás de GPT, Claude, y la mayoría de modelos de lenguaje modernos).
+  </p>
+</section>
+
+<section class="demo-section" id="practica">
+  <span class="section-kicker">// práctica</span>
+  <h2>Calcula y observa el mapa de atención</h2>
+  <p>
+    Elige una oración de ejemplo. Cada celda del mapa muestra cuánta atención le presta la palabra de la
+    fila a la palabra de la columna — calculada con la misma fórmula que usa un transformer real. Los
+    pesos aquí son <strong>aleatorios</strong> (no entrenados) — pulsa "Pesos aleatorios" para ver que el
+    patrón cambia por completo, ya que sin entrenamiento no hay ningún patrón "correcto" todavía.
+  </p>
+
+  <div class="game-panel">
+    <div class="vacuum-controls">
+      <select id="att-sentence"></select>
+      <button id="att-random" class="primary">🎲 Pesos aleatorios</button>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-box wide">
+        <h3>Mapa de atención (fila = pregunta, columna = respuesta)</h3>
+        <div id="att-heatmap"></div>
+      </div>
+    </div>
+
+    <h3>Desglose de una palabra</h3>
+    <p class="game-hint">Haz clic en una palabra de la fila izquierda del mapa para ver su distribución de atención en detalle.</p>
+    <div id="att-breakdown" class="predict-bars"></div>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>Consulta, llave, valor — la misma idea que buscar en una tabla</h2>
+  <p>
+    Cada palabra se proyecta en tres vectores distintos: una <strong>consulta (Q)</strong> — "¿qué estoy
+    buscando?" —, una <strong>llave (K)</strong> — "¿qué tengo para ofrecer?" —, y un
+    <strong>valor (V)</strong> — "la información que aportaría si me prestan atención". La atención de la
+    palabra <em>i</em> hacia la palabra <em>j</em> se calcula comparando la consulta de <em>i</em> contra
+    la llave de <em>j</em> (un producto punto), dividiendo entre <code>√d</code> para mantener los números
+    en un rango razonable, y pasando el resultado por <strong>softmax</strong> para convertirlo en pesos
+    que suman 1 por fila.
+  </p>
+  <div class="callout accent2">
+    <code>Atención(Q, K, V) = softmax(QKᵀ / √d) · V</code><br>
+    Es la fórmula completa del "self-attention" de un transformer — exactamente la que corre aquí. Lo
+    único que le falta a este demo para comportarse como un modelo real es <strong>entrenamiento</strong>:
+    ajustar las matrices Q, K y V con retropropagación sobre muchísimo texto, para que la atención
+    aprenda a enfocarse en relaciones lingüísticas reales (sujetos con sus verbos, pronombres con lo que
+    reemplazan) en vez de en un patrón aleatorio.
+  </div>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>Con pesos aleatorios, ¿el patrón de atención se parece en algo a una relación lingüística real, o es efectivamente ruido? ¿Cómo lo verificarías?</li>
+    <li>¿Por qué dividir entre <code>√d</code> antes del softmax, en vez de aplicar softmax directo al producto punto?</li>
+    <li>Un transformer real usa muchas "cabezas" de atención en paralelo (multi-head), no solo una. ¿Qué ventaja le ves a tener varias cabezas mirando la misma oración a la vez?</li>
+    <li>¿Qué tiene en común este mecanismo con "buscar la palabra más cercana" del demo de embeddings? ¿Y qué tiene de distinto?</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  var D = 8;
+  var VOCAB_WORDS = ['el', 'la', 'perro', 'gato', 'niño', 'niña', 'persiguió', 'vio', 'porque', 'estaba',
+    'asustado', 'feliz', 'casa', 'parque', 'con', 'su', 'pelota', 'rápido', 'grande', 'pequeño'];
+
+  var SENTENCES = [
+    ['el', 'perro', 'persiguió', 'su', 'pelota'],
+    ['la', 'niña', 'vio', 'su', 'casa'],
+    ['el', 'gato', 'estaba', 'asustado'],
+    ['el', 'niño', 'grande', 'persiguió', 'la', 'pelota']
+  ];
+  var SENTENCE_LABELS = [
+    'el perro persiguió su pelota',
+    'la niña vio su casa',
+    'el gato estaba asustado',
+    'el niño grande persiguió la pelota'
+  ];
+
+  function mulberry32(a) {
+    return function () {
+      var t = (a += 0x6D2B79F5);
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  var embedRnd = mulberry32(4242);
+  var EMBEDDINGS = {};
+  VOCAB_WORDS.forEach(function (w) {
+    var vec = [];
+    for (var i = 0; i < D; i++) vec.push((embedRnd() * 2 - 1));
+    EMBEDDINGS[w] = vec;
+  });
+
+  var weightRnd = mulberry32(Date.now() % 1e9);
+  function randomMatrix(rows, cols) {
+    var m = [];
+    for (var r = 0; r < rows; r++) {
+      var row = [];
+      for (var c = 0; c < cols; c++) row.push((weightRnd() * 2 - 1) * 0.5);
+      m.push(row);
+    }
+    return m;
+  }
+  var Wq, Wk, Wv;
+  function reinitWeights() {
+    weightRnd = mulberry32(Math.floor(Math.random() * 1e9));
+    Wq = randomMatrix(D, D);
+    Wk = randomMatrix(D, D);
+    Wv = randomMatrix(D, D);
+  }
+  reinitWeights();
+
+  function matVec(mat, vec) {
+    return mat[0].map(function (_, c) {
+      var sum = 0;
+      for (var r = 0; r < mat.length; r++) sum += vec[r] * mat[r][c];
+      return sum;
+    });
+  }
+  function dot(a, b) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }
+
+  function computeAttention(tokens) {
+    var Q = tokens.map(function (t) { return matVec(Wq, EMBEDDINGS[t] || zeros()); });
+    var K = tokens.map(function (t) { return matVec(Wk, EMBEDDINGS[t] || zeros()); });
+    var V = tokens.map(function (t) { return matVec(Wv, EMBEDDINGS[t] || zeros()); });
+    var n = tokens.length;
+    var scale = Math.sqrt(D);
+    var attn = [];
+    for (var i = 0; i < n; i++) {
+      var scores = K.map(function (k) { return dot(Q[i], k) / scale; });
+      var maxS = Math.max.apply(null, scores);
+      var exps = scores.map(function (s) { return Math.exp(s - maxS); });
+      var sumExp = exps.reduce(function (a, b) { return a + b; }, 0);
+      attn.push(exps.map(function (e) { return e / sumExp; }));
+    }
+    return attn;
+  }
+  function zeros() { var z = []; for (var i = 0; i < D; i++) z.push(0); return z; }
+
+  function $(id) { return document.getElementById(id); }
+  var sentenceSelect = $('att-sentence');
+  var randomBtn = $('att-random');
+  var heatmapEl = $('att-heatmap');
+  var breakdownEl = $('att-breakdown');
+
+  SENTENCE_LABELS.forEach(function (label, idx) {
+    var opt = document.createElement('option');
+    opt.value = idx; opt.textContent = label;
+    sentenceSelect.appendChild(opt);
+  });
+
+  function bin(v) { return Math.max(0, Math.min(4, Math.floor(v * 5))); }
+
+  function renderHeatmap() {
+    var idx = parseInt(sentenceSelect.value, 10);
+    var tokens = SENTENCES[idx];
+    var attn = computeAttention(tokens);
+
+    heatmapEl.innerHTML = '';
+    var table = document.createElement('div');
+    table.style.overflowX = 'auto';
+    var grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = '90px repeat(' + tokens.length + ', 56px)';
+    grid.style.gap = '2px';
+
+    grid.appendChild(document.createElement('div'));
+    tokens.forEach(function (t) {
+      var head = document.createElement('div');
+      head.className = 'mono-value';
+      head.style.fontSize = '0.72rem';
+      head.style.textAlign = 'center';
+      head.textContent = t;
+      grid.appendChild(head);
+    });
+
+    tokens.forEach(function (rowToken, i) {
+      var rowLabel = document.createElement('div');
+      rowLabel.className = 'mono-value';
+      rowLabel.style.fontSize = '0.75rem';
+      rowLabel.style.cursor = 'pointer';
+      rowLabel.textContent = rowToken;
+      rowLabel.addEventListener('click', function () { renderBreakdown(tokens, attn, i); });
+      grid.appendChild(rowLabel);
+
+      tokens.forEach(function (colToken, j) {
+        var cell = document.createElement('div');
+        cell.className = 'qgrid-cell qbin-' + bin(attn[i][j]);
+        cell.style.width = '56px';
+        cell.style.height = '40px';
+        cell.style.fontSize = '0.65rem';
+        cell.textContent = Math.round(attn[i][j] * 100);
+        grid.appendChild(cell);
+      });
+    });
+
+    table.appendChild(grid);
+    heatmapEl.appendChild(table);
+    renderBreakdown(tokens, attn, 0);
+  }
+
+  function renderBreakdown(tokens, attn, rowIdx) {
+    breakdownEl.innerHTML = '';
+    var row = attn[rowIdx].map(function (v, i) { return { t: tokens[i], v: v }; })
+      .sort(function (a, b) { return b.v - a.v; });
+    var maxV = row[0].v;
+    row.forEach(function (r) {
+      var wrap = document.createElement('div');
+      wrap.className = 'predict-bar-row' + (r.v === maxV ? ' top' : '');
+      var label = document.createElement('span');
+      label.className = 'predict-bar-label';
+      label.style.width = '5rem';
+      label.textContent = r.t;
+      var track = document.createElement('span');
+      track.className = 'predict-bar-track';
+      var fill = document.createElement('span');
+      fill.className = 'predict-bar-fill';
+      fill.style.width = (r.v * 100).toFixed(1) + '%';
+      track.appendChild(fill);
+      var value = document.createElement('span');
+      value.className = 'predict-bar-value';
+      value.textContent = Math.round(r.v * 100) + '%';
+      wrap.appendChild(label); wrap.appendChild(track); wrap.appendChild(value);
+      breakdownEl.appendChild(wrap);
+    });
+  }
+
+  sentenceSelect.addEventListener('change', renderHeatmap);
+  randomBtn.addEventListener('click', function () { reinitWeights(); renderHeatmap(); });
+
+  renderHeatmap();
+})();
+</script>

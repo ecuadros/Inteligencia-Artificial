@@ -1,0 +1,289 @@
+---
+layout: demo
+title: "Chatbot simple con LLM API"
+subtitle: "El único demo del curso que necesita salir del navegador — y por eso mismo, el mejor lugar para hablar de por qué casi todo lo demás no lo necesitó."
+eyebrow: "Módulo 7 · Procesamiento de Lenguaje Natural"
+module: 7
+module_title: "Procesamiento de Lenguaje Natural"
+prev_url: "/modulo-07-nlp/atencion-transformer.html"
+prev_title: "Mapa de atención de un mini-transformer"
+---
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#practica">Práctica</a>
+  <a href="#mecanica">Cómo funciona</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>Un modelo de lenguaje grande no cabe en tu navegador</h2>
+  <p>
+    Todo lo que construiste hasta ahora corrió con datos y modelos diminutos, enteramente en tu
+    navegador. Un modelo como el que responde este chat tiene miles de millones de parámetros — no hay
+    forma de descargarlo ni de correrlo en una laptop de curso. La única opción es
+    <strong>llamar a un servidor remoto</strong> que ya tiene el modelo cargado, mandarle tu mensaje, y
+    esperar la respuesta.
+  </p>
+  <p>
+    Eso convierte a este demo en el único de todo el curso con una arquitectura cliente-servidor real —
+    y es exactamente lo que <code>CLAUDE.md</code> de este sitio dice que evitemos en todos los demás
+    ("no backend, todo corre en el navegador"). Aquí vas a ver, en vivo, por qué esa regla existe y qué
+    se gana al romperla.
+  </p>
+  <div class="callout">
+    <strong>Tu clave, tu responsabilidad:</strong> este demo no trae ninguna clave de API incluida.
+    Necesitas pegar la tuya propia (de Anthropic, OpenAI, o un servidor compatible como Ollama local) para
+    que funcione. Tu clave <strong>nunca se guarda ni se envía a ningún servidor de este sitio</strong> —
+    vive solo en la memoria de esta pestaña y se pierde al recargar. Aun así, usa una clave con límite de
+    gasto bajo y nunca la escribas en una computadora que no sea tuya.
+  </div>
+</section>
+
+<section class="demo-section" id="practica">
+  <span class="section-kicker">// práctica</span>
+  <h2>Conecta tu clave y conversa</h2>
+
+  <div class="game-panel">
+    <div class="vacuum-controls">
+      <select id="chat-provider">
+        <option value="anthropic">Anthropic (Claude)</option>
+        <option value="openai">Compatible con OpenAI (OpenAI, Ollama local, etc.)</option>
+      </select>
+      <input type="password" id="chat-key" placeholder="Pega tu clave de API aquí" style="flex:1; min-width:220px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); padding:0.45rem 0.7rem; font-family:var(--font-mono); font-size:0.85rem;" />
+    </div>
+    <div class="vacuum-controls">
+      <input type="text" id="chat-baseurl" placeholder="URL base (opcional, para Ollama u otro servidor compatible)" style="flex:1; min-width:260px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); padding:0.45rem 0.7rem; font-family:var(--font-mono); font-size:0.85rem;" />
+      <input type="text" id="chat-model" placeholder="Modelo" style="width:220px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); padding:0.45rem 0.7rem; font-family:var(--font-mono); font-size:0.85rem;" />
+    </div>
+
+    <div class="vacuum-speed">
+      <span>Temperatura</span>
+      <input type="range" id="chat-temp" min="0" max="1" step="0.05" value="0.7" />
+      <span class="mono-value" id="chat-temp-value">0.70</span>
+    </div>
+
+    <textarea id="chat-system" rows="2" style="width:100%; margin-top:0.6rem; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); padding:0.6rem; font-family:var(--font-mono); font-size:0.85rem;">Eres un asistente útil para estudiantes de un curso de introducción a la Inteligencia Artificial. Responde en español, de forma breve y clara.</textarea>
+
+    <div id="chat-log" style="margin-top:0.9rem; display:flex; flex-direction:column; gap:0.6rem; max-height:360px; overflow-y:auto;"></div>
+
+    <div class="vacuum-controls" style="margin-top:0.6rem;">
+      <input type="text" id="chat-input" placeholder="Escribe tu mensaje…" style="flex:1; min-width:220px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); padding:0.5rem 0.75rem;" />
+      <button id="chat-send" class="primary">Enviar</button>
+      <button id="chat-clear">↺ Limpiar conversación</button>
+    </div>
+
+    <p class="game-hint" id="chat-status"></p>
+
+    <div class="demo-controls">
+      <button id="chat-toggle-raw">🔍 Mostrar solicitud/respuesta cruda</button>
+    </div>
+    <pre id="chat-raw" class="hidden" style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:0.75rem; font-size:0.75rem; overflow-x:auto; max-height:260px;"></pre>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>Un fetch, un JSON, una respuesta</h2>
+  <p>
+    Cada vez que envías un mensaje, esta página arma una petición HTTP con tu clave, el historial de la
+    conversación, la instrucción de sistema y la temperatura, y la manda directo desde tu navegador al
+    servidor del proveedor (usa "Mostrar solicitud/respuesta cruda" para ver exactamente ese JSON). El
+    servidor corre el modelo — la parte que no cabe en tu laptop — y devuelve el texto generado.
+  </p>
+  <p>
+    La <strong>temperatura</strong> controla cuánto "arriesga" el modelo al elegir la siguiente palabra:
+    baja (cerca de 0) lo hace repetir siempre la opción más probable, dando respuestas más predecibles;
+    alta (cerca de 1) le permite elegir palabras menos obvias, dando respuestas más variadas — y a veces
+    más erráticas.
+  </p>
+  <div class="callout accent2">
+    <strong>Por qué casi ningún demo real de IA es "sin backend":</strong> ahora que viste la excepción,
+    la regla tiene más sentido. Los modelos de los módulos anteriores eran chicos a propósito, para que
+    cupieran en tu navegador. Un producto real con un modelo de este tamaño necesita un servidor — y ese
+    servidor es también donde se protege la clave de API, se controla el gasto, y se agregan filtros de
+    seguridad antes de que la respuesta llegue al usuario. Nada de eso existe en este demo educativo: por
+    eso tu clave vive solo en tu navegador y por eso te pedimos usar una con límite de gasto bajo.
+  </div>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>¿Qué riesgos de seguridad tendría este demo si, en vez de pedirte tu clave, viniera con una clave incluida en el código?</li>
+    <li>Si quisieras convertir este demo en un producto real para miles de usuarios, ¿qué tendría que vivir en un servidor propio (además del modelo)?</li>
+    <li>Cambia la instrucción de sistema para que el asistente responda siempre en verso. ¿Hasta qué punto logra seguir esa instrucción de forma consistente?</li>
+    <li>¿Qué diferencia notas entre una respuesta con temperatura 0.1 y la misma pregunta con temperatura 1.0?</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  function $(id) { return document.getElementById(id); }
+
+  var providerSelect = $('chat-provider');
+  var keyInput = $('chat-key');
+  var baseUrlInput = $('chat-baseurl');
+  var modelInput = $('chat-model');
+  var tempInput = $('chat-temp'), tempValue = $('chat-temp-value');
+  var systemInput = $('chat-system');
+  var logEl = $('chat-log');
+  var msgInput = $('chat-input');
+  var sendBtn = $('chat-send');
+  var clearBtn = $('chat-clear');
+  var statusEl = $('chat-status');
+  var toggleRawBtn = $('chat-toggle-raw');
+  var rawEl = $('chat-raw');
+
+  var history = [];
+  var lastRaw = null;
+
+  var DEFAULTS = {
+    anthropic: { baseUrl: 'https://api.anthropic.com/v1/messages', model: 'claude-sonnet-4-5' },
+    openai: { baseUrl: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini' }
+  };
+
+  function applyProviderDefaults() {
+    var d = DEFAULTS[providerSelect.value];
+    baseUrlInput.value = d.baseUrl;
+    modelInput.value = d.model;
+  }
+  applyProviderDefaults();
+  providerSelect.addEventListener('change', applyProviderDefaults);
+
+  tempInput.addEventListener('input', function () { tempValue.textContent = parseFloat(tempInput.value).toFixed(2); });
+
+  function addBubble(role, text) {
+    var bubble = document.createElement('div');
+    bubble.style.alignSelf = role === 'user' ? 'flex-end' : 'flex-start';
+    bubble.style.maxWidth = '80%';
+    bubble.style.padding = '0.55rem 0.8rem';
+    bubble.style.borderRadius = '10px';
+    bubble.style.fontSize = '0.9rem';
+    bubble.style.whiteSpace = 'pre-wrap';
+    bubble.style.background = role === 'user' ? 'var(--accent)' : 'var(--surface2)';
+    bubble.style.color = role === 'user' ? '#06121f' : 'var(--text)';
+    bubble.style.border = role === 'user' ? 'none' : '1px solid var(--border)';
+    bubble.textContent = text;
+    logEl.appendChild(bubble);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function buildRequest() {
+    var provider = providerSelect.value;
+    var temp = parseFloat(tempInput.value);
+    var system = systemInput.value;
+    var model = modelInput.value.trim();
+    var url = baseUrlInput.value.trim();
+
+    if (provider === 'anthropic') {
+      return {
+        url: url,
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': keyInput.value.trim(),
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: {
+          model: model,
+          max_tokens: 400,
+          temperature: temp,
+          system: system,
+          messages: history.map(function (m) { return { role: m.role, content: m.content }; })
+        },
+        extractText: function (data) {
+          return (data.content && data.content[0] && data.content[0].text) || JSON.stringify(data);
+        }
+      };
+    }
+    return {
+      url: url,
+      headers: {
+        'content-type': 'application/json',
+        'authorization': 'Bearer ' + keyInput.value.trim()
+      },
+      body: {
+        model: model,
+        temperature: temp,
+        messages: [{ role: 'system', content: system }].concat(
+          history.map(function (m) { return { role: m.role, content: m.content }; })
+        )
+      },
+      extractText: function (data) {
+        return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || JSON.stringify(data);
+      }
+    };
+  }
+
+  function updateRawView(req, respData, error) {
+    lastRaw = {
+      request: { url: req.url, headers: maskKey(req.headers), body: req.body },
+      response: error ? { error: String(error) } : respData
+    };
+    if (!rawEl.classList.contains('hidden')) rawEl.textContent = JSON.stringify(lastRaw, null, 2);
+  }
+
+  function maskKey(headers) {
+    var copy = {};
+    Object.keys(headers).forEach(function (k) { copy[k] = k.toLowerCase().indexOf('key') >= 0 || k.toLowerCase() === 'authorization' ? '••••• (oculta)' : headers[k]; });
+    return copy;
+  }
+
+  function sendMessage() {
+    var text = msgInput.value.trim();
+    if (!text) return;
+    if (!keyInput.value.trim()) {
+      statusEl.textContent = 'Pega tu clave de API antes de enviar un mensaje.';
+      return;
+    }
+    history.push({ role: 'user', content: text });
+    addBubble('user', text);
+    msgInput.value = '';
+    statusEl.textContent = 'Esperando respuesta…';
+    sendBtn.disabled = true;
+
+    var req = buildRequest();
+    fetch(req.url, { method: 'POST', headers: req.headers, body: JSON.stringify(req.body) })
+      .then(function (res) {
+        return res.json().then(function (data) { return { ok: res.ok, status: res.status, data: data }; });
+      })
+      .then(function (result) {
+        sendBtn.disabled = false;
+        if (!result.ok) {
+          statusEl.textContent = 'Error ' + result.status + ' del proveedor. Revisa tu clave y el nombre del modelo.';
+          updateRawView(req, result.data);
+          return;
+        }
+        var text = req.extractText(result.data);
+        history.push({ role: 'assistant', content: text });
+        addBubble('assistant', text);
+        statusEl.textContent = '';
+        updateRawView(req, result.data);
+      })
+      .catch(function (err) {
+        sendBtn.disabled = false;
+        statusEl.textContent = 'No se pudo completar la solicitud — probablemente un bloqueo CORS del proveedor o un problema de red. Ese bloqueo es justo la razón por la que la mayoría de apps de IA necesitan un backend propio.';
+        updateRawView(req, null, err);
+      });
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  msgInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') sendMessage(); });
+
+  clearBtn.addEventListener('click', function () {
+    history = [];
+    logEl.innerHTML = '';
+    statusEl.textContent = '';
+  });
+
+  toggleRawBtn.addEventListener('click', function () {
+    rawEl.classList.toggle('hidden');
+    if (!rawEl.classList.contains('hidden') && lastRaw) rawEl.textContent = JSON.stringify(lastRaw, null, 2);
+  });
+})();
+</script>

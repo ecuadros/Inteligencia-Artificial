@@ -1,0 +1,291 @@
+---
+layout: demo
+title: "Visualizador de embeddings de palabras"
+subtitle: "¿Cómo se representa el significado de una palabra con números? Como una posición en un mapa, donde la distancia y la dirección importan."
+eyebrow: "Módulo 7 · Procesamiento de Lenguaje Natural"
+module: 7
+module_title: "Procesamiento de Lenguaje Natural"
+prev_url: "/modulo-06-vision-computadora/mapa-feature-maps.html"
+prev_title: "Mapa de feature maps de una CNN"
+next_url: "/modulo-07-nlp/atencion-transformer.html"
+next_title: "Mapa de atención de un mini-transformer"
+---
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#practica">Práctica</a>
+  <a href="#mecanica">Cómo funciona</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>Una red no entiende palabras — entiende números</h2>
+  <p>
+    Todo lo que viste en los módulos anteriores — pesos, sumas, gradientes — trabaja con números. Pero el
+    texto son palabras. Antes de que cualquier red pueda procesar lenguaje, cada palabra necesita
+    convertirse en un vector: una lista de números que, si el entrenamiento salió bien, coloca palabras
+    parecidas <strong>cerca</strong> unas de otras y palabras relacionadas en la
+    <strong>misma dirección</strong>.
+  </p>
+  <p>
+    Eso es un <strong>embedding</strong>. Aquí no vas a entrenar uno (los reales tienen cientos de
+    dimensiones y se entrenan sobre miles de millones de palabras) — vas a explorar uno construido a mano,
+    en solo dos dimensiones, para que puedas <em>ver</em> exactamente qué significa "cerca" y "misma
+    dirección".
+  </p>
+</section>
+
+<section class="demo-section" id="practica">
+  <span class="section-kicker">// práctica</span>
+  <h2>Explora el mapa y prueba analogías</h2>
+  <p>
+    Haz clic en cualquier palabra para ver sus vecinos más cercanos. Luego prueba la calculadora de
+    analogías: <code>A − B + C = ?</code> — por ejemplo, <code>rey − hombre + mujer</code>.
+  </p>
+
+  <div class="game-panel">
+    <div class="chart-box wide">
+      <h3>Mapa de palabras</h3>
+      <div id="emb-scatter"></div>
+      <p class="game-hint" id="emb-hint">Clic en una palabra para ver sus vecinos más cercanos.</p>
+    </div>
+
+    <div class="vacuum-controls">
+      <select id="emb-a"></select>
+      <span class="mono-value">−</span>
+      <select id="emb-b"></select>
+      <span class="mono-value">+</span>
+      <select id="emb-c"></select>
+      <button id="emb-compute" class="primary">Calcular analogía</button>
+      <button id="emb-clear">↺ Limpiar</button>
+    </div>
+    <p class="reveal-hint" id="emb-analogy-result"></p>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>Distancia como similitud, dirección como relación</h2>
+  <p>
+    En este mapa hecho a mano, cada palabra femenina está colocada exactamente en la posición de su
+    contraparte masculina más un mismo vector de desplazamiento — y cada capital está colocada en la
+    posición de su país más otro vector fijo. Por eso <code>rey − hombre + mujer</code> aterriza casi
+    exactamente sobre <code>reina</code>: la resta "cancela" el significado compartido y deja solo la
+    relación de género, que luego se aplica sobre otra palabra.
+  </p>
+  <p>
+    Los embeddings reales (Word2Vec, GloVe, o los que usa un transformer moderno) no se construyen a
+    mano — se <strong>aprenden</strong> ajustando cientos de números por palabra para que ese mismo tipo
+    de aritmética funcione, entrenando sobre el contexto en el que cada palabra aparece en textos reales:
+    palabras que aparecen en contextos parecidos terminan con vectores parecidos.
+  </p>
+  <div class="callout accent2">
+    <strong>Solo 2 dimensiones aquí, cientas en la práctica:</strong> con dos números por palabra, este
+    mapa cabe en una pantalla — pero solo alcanza para capturar unas pocas relaciones a la vez (género,
+    país-capital). Un embedding real usa 100-300 dimensiones porque el significado de una palabra tiene
+    muchísimos más matices de los que caben en un plano.
+  </div>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>¿Qué otras relaciones (aparte de género y país-capital) podrían representarse como un vector de desplazamiento constante?</li>
+    <li>Si dos palabras casi nunca aparecen en los mismos contextos pero significan cosas parecidas (sinónimos poco usados juntos), ¿qué le pasaría a su distancia en un embedding real entrenado con datos?</li>
+    <li>¿Por qué un embedding entrenado sobre textos en español no serviría directamente para analizar textos en inglés?</li>
+    <li>Este mapa lo diseñé yo a mano, con mis propios sesgos sobre qué palabras "van juntas". Un embedding real se entrena con texto escrito por personas reales — ¿qué sesgos de esas personas podrían terminar codificados en las distancias y direcciones del embedding? (Vas a retomar esta pregunta en el Módulo 8.)</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  var GENDER_OFFSET = [-3.2, 2.4];
+  var CAPITAL_OFFSET = [4.2, -3.6];
+
+  var GENDER_PAIRS = [
+    { m: 'rey', f: 'reina', base: [-1, 9] },
+    { m: 'príncipe', f: 'princesa', base: [1, 10] },
+    { m: 'hombre', f: 'mujer', base: [0, 7] },
+    { m: 'papá', f: 'mamá', base: [-2, 8] },
+    { m: 'tío', f: 'tía', base: [2, 8.5] },
+    { m: 'abuelo', f: 'abuela', base: [-1.5, 6.5] },
+    { m: 'hermano', f: 'hermana', base: [1.5, 7.5] },
+    { m: 'actor', f: 'actriz', base: [-3, 6] },
+    { m: 'doctor', f: 'doctora', base: [6, 1] },
+    { m: 'ingeniero', f: 'ingeniera', base: [7.5, 2] },
+    { m: 'maestro', f: 'maestra', base: [5, -0.5] },
+    { m: 'abogado', f: 'abogada', base: [8, 0] },
+    { m: 'cocinero', f: 'cocinera', base: [6.5, 3] }
+  ];
+
+  var COUNTRY_PAIRS = [
+    { country: 'Perú', capital: 'Lima', base: [-7, -1] },
+    { country: 'Francia', capital: 'París', base: [-5.5, 0.5] },
+    { country: 'España', capital: 'Madrid', base: [-6.5, 1.5] },
+    { country: 'Chile', capital: 'Santiago', base: [-8, 0.5] },
+    { country: 'Italia', capital: 'Roma', base: [-5, -0.5] },
+    { country: 'Japón', capital: 'Tokio', base: [-6, -2] },
+    { country: 'Brasil', capital: 'Brasilia', base: [-7.5, -2.5] }
+  ];
+
+  var ANIMALS = ['perro', 'gato', 'león', 'tigre', 'elefante', 'caballo', 'pájaro', 'pez', 'serpiente', 'oso', 'lobo', 'conejo'];
+  var COLORS = ['rojo', 'azul', 'verde', 'amarillo', 'negro', 'blanco', 'morado', 'naranja', 'rosado', 'gris'];
+  var EMOTIONS = ['feliz', 'triste', 'enojado', 'sorprendido', 'asustado', 'calmado', 'nervioso', 'orgulloso'];
+  var ADJ = ['grande', 'pequeño', 'caliente', 'frío', 'rápido', 'lento', 'fuerte', 'débil'];
+
+  function mulberry32(a) {
+    return function () {
+      var t = (a += 0x6D2B79F5);
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var rnd = mulberry32(72025);
+  function jitter(base, spread) {
+    return [base[0] + (rnd() * 2 - 1) * spread, base[1] + (rnd() * 2 - 1) * spread];
+  }
+
+  var WORDS = [];
+  GENDER_PAIRS.forEach(function (p) {
+    WORDS.push({ w: p.m, cat: 'cluster-0', pos: p.base });
+    WORDS.push({ w: p.f, cat: 'cluster-4', pos: [p.base[0] + GENDER_OFFSET[0], p.base[1] + GENDER_OFFSET[1]] });
+  });
+  COUNTRY_PAIRS.forEach(function (p) {
+    WORDS.push({ w: p.country, cat: 'cluster-2', pos: p.base });
+    WORDS.push({ w: p.capital, cat: 'cluster-5', pos: [p.base[0] + CAPITAL_OFFSET[0], p.base[1] + CAPITAL_OFFSET[1]] });
+  });
+  ANIMALS.forEach(function (a) { WORDS.push({ w: a, cat: 'cluster-3', pos: jitter([-9, 6], 1.6) }); });
+  COLORS.forEach(function (c) { WORDS.push({ w: c, cat: 'cluster-1', pos: jitter([8.5, 7], 1.6) }); });
+  EMOTIONS.forEach(function (e) { WORDS.push({ w: e, cat: 'cluster-3', pos: jitter([-8, -6], 1.6) }); });
+  ADJ.forEach(function (a) { WORDS.push({ w: a, cat: 'cluster-1', pos: jitter([2, -8], 1.8) }); });
+
+  var byWord = {};
+  WORDS.forEach(function (w) { byWord[w.w] = w; });
+
+  function $(id) { return document.getElementById(id); }
+
+  var margin = { top: 16, right: 16, bottom: 16, left: 16 };
+  var width = 900, height = 560;
+  var innerW = width - margin.left - margin.right;
+  var innerH = height - margin.top - margin.bottom;
+
+  var svg = d3.select('#emb-scatter').append('svg')
+    .attr('viewBox', '0 0 ' + width + ' ' + height).attr('width', '100%').attr('height', height);
+  var g = svg.append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+  var xScale = d3.scaleLinear().domain([-12, 12]).range([0, innerW]);
+  var yScale = d3.scaleLinear().domain([-11, 12]).range([innerH, 0]);
+
+  var linkLayer = g.append('g');
+  var pointLayer = g.append('g');
+  var labelLayer = g.append('g');
+
+  var hint = $('emb-hint');
+
+  function dist(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]); }
+
+  function clearHighlights() {
+    linkLayer.selectAll('*').remove();
+    pointLayer.selectAll('circle').attr('class', function (d) { return 'data-point ' + d.cat; }).attr('r', 5);
+    labelLayer.selectAll('text').style('font-weight', 400).style('fill', 'var(--muted)');
+  }
+
+  function showNeighbors(word) {
+    clearHighlights();
+    var target = byWord[word];
+    var ranked = WORDS.filter(function (w) { return w.w !== word; })
+      .map(function (w) { return { w: w, d: dist(w.pos, target.pos) }; })
+      .sort(function (a, b) { return a.d - b.d; })
+      .slice(0, 5);
+
+    pointLayer.selectAll('circle').filter(function (d) { return d.w === word; }).attr('r', 8);
+    labelLayer.selectAll('text').filter(function (d) { return d.w === word; }).style('font-weight', 700).style('fill', 'var(--text)');
+
+    ranked.forEach(function (r) {
+      linkLayer.append('line')
+        .attr('x1', xScale(target.pos[0])).attr('y1', yScale(target.pos[1]))
+        .attr('x2', xScale(r.w.pos[0])).attr('y2', yScale(r.w.pos[1]))
+        .attr('stroke', 'var(--accent)').attr('stroke-width', 1.5).attr('opacity', 0.7);
+      labelLayer.selectAll('text').filter(function (d) { return d.w === r.w.w; }).style('font-weight', 700).style('fill', 'var(--accent)');
+    });
+
+    hint.textContent = 'Vecinos más cercanos de "' + word + '": ' + ranked.map(function (r) { return r.w.w; }).join(', ') + '.';
+  }
+
+  function render() {
+    var circles = pointLayer.selectAll('circle').data(WORDS, function (d) { return d.w; });
+    circles.enter().append('circle')
+      .attr('class', function (d) { return 'data-point ' + d.cat; })
+      .attr('r', 5)
+      .attr('cx', function (d) { return xScale(d.pos[0]); })
+      .attr('cy', function (d) { return yScale(d.pos[1]); })
+      .style('cursor', 'pointer')
+      .on('click', function (event, d) { showNeighbors(d.w); });
+
+    var labels = labelLayer.selectAll('text').data(WORDS, function (d) { return d.w; });
+    labels.enter().append('text')
+      .attr('x', function (d) { return xScale(d.pos[0]) + 8; })
+      .attr('y', function (d) { return yScale(d.pos[1]) + 4; })
+      .text(function (d) { return d.w; })
+      .style('font-size', '11px')
+      .style('font-family', 'var(--font-mono)')
+      .style('fill', 'var(--muted)')
+      .style('cursor', 'pointer')
+      .on('click', function (event, d) { showNeighbors(d.w); });
+  }
+
+  var selectA = $('emb-a'), selectB = $('emb-b'), selectC = $('emb-c');
+  [selectA, selectB, selectC].forEach(function (sel) {
+    WORDS.slice().sort(function (a, b) { return a.w.localeCompare(b.w); }).forEach(function (w) {
+      var opt = document.createElement('option');
+      opt.value = w.w; opt.textContent = w.w;
+      sel.appendChild(opt);
+    });
+  });
+  selectA.value = 'rey'; selectB.value = 'hombre'; selectC.value = 'mujer';
+
+  var analogyResult = $('emb-analogy-result');
+  var analogyMarker = null, analogyArrows = null;
+
+  $('emb-compute').addEventListener('click', function () {
+    clearHighlights();
+    var a = byWord[selectA.value], b = byWord[selectB.value], c = byWord[selectC.value];
+    var target = [a.pos[0] - b.pos[0] + c.pos[0], a.pos[1] - b.pos[1] + c.pos[1]];
+
+    var ranked = WORDS.filter(function (w) { return w.w !== a.w && w.w !== b.w && w.w !== c.w; })
+      .map(function (w) { return { w: w, d: dist(w.pos, target) }; })
+      .sort(function (x, y) { return x.d - y.d; });
+    var best = ranked[0];
+
+    linkLayer.append('line')
+      .attr('x1', xScale(b.pos[0])).attr('y1', yScale(b.pos[1]))
+      .attr('x2', xScale(a.pos[0])).attr('y2', yScale(a.pos[1]))
+      .attr('stroke', 'var(--danger)').attr('stroke-width', 2);
+    linkLayer.append('line')
+      .attr('x1', xScale(c.pos[0])).attr('y1', yScale(c.pos[1]))
+      .attr('x2', xScale(target[0])).attr('y2', yScale(target[1]))
+      .attr('stroke', 'var(--accent3)').attr('stroke-width', 2).attr('stroke-dasharray', '5,3');
+    linkLayer.append('circle')
+      .attr('cx', xScale(target[0])).attr('cy', yScale(target[1])).attr('r', 7)
+      .attr('fill', 'none').attr('stroke', '#ffee00').attr('stroke-width', 2.5);
+
+    analogyResult.textContent = selectA.value + ' − ' + selectB.value + ' + ' + selectC.value +
+      ' ≈ "' + best.w.w + '" (siguiente más cercano: "' + ranked[1].w.w + '").';
+  });
+
+  $('emb-clear').addEventListener('click', function () {
+    clearHighlights();
+    analogyResult.textContent = '';
+    hint.textContent = 'Clic en una palabra para ver sus vecinos más cercanos.';
+  });
+
+  render();
+})();
+</script>
