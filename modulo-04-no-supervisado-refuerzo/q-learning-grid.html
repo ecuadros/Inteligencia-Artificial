@@ -1,0 +1,443 @@
+---
+layout: demo
+title: "Q-learning jugable en grid world"
+subtitle: "Nadie le da al agente un mapa ni una función objetivo. Solo puede moverse, y de vez en cuando recibe una recompensa o un castigo."
+eyebrow: "Módulo 4 · No Supervisado y por Refuerzo"
+module: 4
+module_title: "No Supervisado y por Refuerzo"
+prev_url: "/modulo-04-no-supervisado-refuerzo/segmentacion-clientes.html"
+prev_title: "Segmentación de clientes con K-means"
+---
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#practica">Práctica</a>
+  <a href="#mecanica">Cómo funciona</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>Aprender a base de prueba y error, sin mapa ni maestro</h2>
+  <p>
+    En el Módulo 2, BFS/A* conocían el mapa completo del laberinto de antemano. Un robot de almacén real, o
+    un agente jugando un videojuego nuevo, no tiene ese lujo: solo sabe en qué casilla está, qué acciones
+    puede tomar, y — después de moverse — si recibió una recompensa, un castigo, o nada. Tiene que
+    <strong>aprender el mapa a partir de la experiencia</strong>.
+  </p>
+  <p>
+    Eso es <strong>aprendizaje por refuerzo</strong>: el agente prueba acciones, observa qué recompensa
+    obtiene, y ajusta sus preferencias para repetir lo que funcionó y evitar lo que no.
+  </p>
+  <div class="callout">
+    <strong>Q-learning</strong> aprende una tabla de valores <code>Q(estado, acción)</code>: qué tan buena
+    es cada acción en cada casilla, estimada a partir de la recompensa inmediata más el valor de la mejor
+    acción futura. Con suficiente práctica, esa tabla converge a una política casi óptima.
+  </div>
+</section>
+
+<section class="demo-section" id="practica">
+  <span class="section-kicker">// práctica</span>
+  <h2>Entrena al agente y luego observa su política</h2>
+  <p>
+    🟩 = inicio · 🏆 = meta (+50) · 💀 = trampa (-50) · cada paso normal cuesta -1 (para premiar caminos
+    cortos). El color de fondo de cada casilla muestra qué tan buena cree el agente que es esa casilla
+    (más amarillo = mejor); la flecha muestra la mejor acción aprendida ahí.
+  </p>
+
+  <div class="game-panel">
+    <div class="maze-wrap">
+      <div class="maze-grid-wrap">
+        <div class="demo-controls" style="margin-bottom:0.75rem;">
+          <button id="qg-new-world">🌍 Nuevo mundo</button>
+          <button id="qg-reset-q">↺ Reiniciar aprendizaje</button>
+        </div>
+        <div class="qgrid" id="qgrid"></div>
+        <div class="maze-legend">
+          <span class="maze-legend-item"><span class="maze-legend-swatch" style="background:#1c2330;"></span>Valor bajo</span>
+          <span class="maze-legend-item"><span class="maze-legend-swatch" style="background:#ffee00;"></span>Valor alto</span>
+          <span class="maze-legend-item"><span class="maze-legend-swatch" style="background:var(--border);"></span>Pared</span>
+          <span class="maze-legend-item"><span class="maze-legend-swatch" style="background:var(--danger);"></span>Trampa</span>
+          <span class="maze-legend-item"><span class="maze-legend-swatch" style="background:var(--accent3);"></span>Meta</span>
+        </div>
+      </div>
+
+      <div class="vacuum-side">
+        <div class="demo-controls">
+          <button id="qg-train-1" class="primary">▶ Entrenar 1 episodio</button>
+          <button id="qg-train-100" class="primary">⏩ Entrenar 100 episodios</button>
+          <button id="qg-play">🤖 Reproducir política</button>
+        </div>
+        <div class="demo-speed">
+          <span>Épsilon (exploración)</span>
+          <input type="range" id="qg-epsilon" min="0" max="100" value="25" step="5" />
+          <span class="mono-value" id="qg-epsilon-value">0.25</span>
+        </div>
+        <div class="demo-speed">
+          <span>Tasa de aprendizaje (α)</span>
+          <input type="range" id="qg-alpha" min="5" max="100" value="50" step="5" />
+          <span class="mono-value" id="qg-alpha-value">0.50</span>
+        </div>
+        <div class="demo-speed">
+          <span>Velocidad de reproducción</span>
+          <input type="range" id="qg-speed" min="20" max="300" value="140" step="20" />
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-value" id="qg-stat-episodes">0</div><div class="stat-label">Episodios</div></div>
+          <div class="stat-box"><div class="stat-value" id="qg-stat-lastreward">—</div><div class="stat-label">Recompensa último episodio</div></div>
+        </div>
+
+        <div class="success-banner hidden" id="qg-result"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>Explorar para aprender, explotar para ganar</h2>
+  <p>
+    En cada paso, con probabilidad <code>ε</code> (épsilon) el agente elige una acción <strong>al
+    azar</strong> (explorar); si no, elige la que su tabla Q dice que es mejor <strong>hasta ahora</strong>
+    (explotar). Después de moverse, actualiza:
+  </p>
+  <div class="callout accent2">
+    <code>Q(s,a) ← Q(s,a) + α · [ recompensa + γ · max Q(s', a') − Q(s,a) ]</code><br>
+    Traducido: ajusta el valor de la acción que tomó hacia la recompensa que recibió, más lo mejor que
+    cree que puede lograr desde donde cayó — descontado por <code>γ</code>, porque una recompensa lejana
+    en el futuro vale un poco menos que una inmediata.
+  </div>
+  <p>
+    Con <code>ε</code> muy bajo, el agente explota casi siempre lo que ya sabe — rápido, pero puede
+    quedarse con una ruta mediocre porque nunca probó algo mejor. Con <code>ε</code> muy alto, explora
+    mucho pero tarda más en converger a una buena política. Prueba entrenar 100 episodios con distintos
+    valores de <code>ε</code> y compara la política resultante con "Reproducir política".
+  </p>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>¿Por qué el paso normal tiene una recompensa de -1 en vez de 0? ¿Qué pasaría con las rutas aprendidas si fuera 0?</li>
+    <li>Compara este agente con A* del Módulo 2: ¿cuál necesita conocer el mapa de antemano? ¿Cuál tiene que "sufrir" trampas para aprender a evitarlas?</li>
+    <li>Si entrenas muy pocos episodios, ¿qué tipo de errores esperarías ver en la política reproducida?</li>
+    <li>¿En qué problema real de ingeniería preferirías un agente que aprende por prueba y error en vez de uno que planea con un mapa completo?</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  var ROWS = 6, COLS = 8;
+  var ACTIONS = [
+    { dr: -1, dc: 0, sym: '↑' },
+    { dr: 1, dc: 0, sym: '↓' },
+    { dr: 0, dc: -1, sym: '←' },
+    { dr: 0, dc: 1, sym: '→' }
+  ];
+  var STEP_REWARD = -1, GOAL_REWARD = 50, TRAP_REWARD = -50;
+  var GAMMA = 0.9, MAX_STEPS = 150;
+  var START = { r: 0, c: 0 };
+  var GOAL = { r: ROWS - 1, c: COLS - 1 };
+
+  function $(id) { return document.getElementById(id); }
+
+  var gridEl = $('qgrid');
+  var newWorldBtn = $('qg-new-world'), resetQBtn = $('qg-reset-q');
+  var train1Btn = $('qg-train-1'), train100Btn = $('qg-train-100'), playBtn = $('qg-play');
+  var epsilonInput = $('qg-epsilon'), epsilonValue = $('qg-epsilon-value');
+  var alphaInput = $('qg-alpha'), alphaValue = $('qg-alpha-value');
+  var speedSlider = $('qg-speed');
+  var statEpisodes = $('qg-stat-episodes'), statLastReward = $('qg-stat-lastreward');
+  var resultBanner = $('qg-result');
+
+  var grid = [];
+  var Q = {};
+  var episodes = 0;
+  var playing = false;
+  var playTimer = null;
+  var cellEls = [];
+
+  function key(r, c) { return r + ',' + c; }
+  function sameCell(a, b) { return a.r === b.r && a.c === b.c; }
+
+  function mulberry32(a) {
+    return function () {
+      var t = (a += 0x6D2B79F5);
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function isReachable(g) {
+    var visited = {};
+    visited[key(START.r, START.c)] = true;
+    var queue = [START];
+    while (queue.length) {
+      var cur = queue.shift();
+      if (sameCell(cur, GOAL)) return true;
+      [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(function (d) {
+        var nr = cur.r + d[0], nc = cur.c + d[1];
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return;
+        if (g[nr][nc] === 'wall') return;
+        if (visited[key(nr, nc)]) return;
+        visited[key(nr, nc)] = true;
+        queue.push({ r: nr, c: nc });
+      });
+    }
+    return false;
+  }
+
+  function makeWorld() {
+    var rnd = mulberry32(Date.now() % 1e9);
+    var attempts = 0, g, ok = false;
+    while (attempts < 50 && !ok) {
+      g = [];
+      for (var r = 0; r < ROWS; r++) {
+        var row = [];
+        for (var c = 0; c < COLS; c++) row.push('empty');
+        g.push(row);
+      }
+      for (var r2 = 0; r2 < ROWS; r2++) {
+        for (var c2 = 0; c2 < COLS; c2++) {
+          if (sameCell({ r: r2, c: c2 }, START) || sameCell({ r: r2, c: c2 }, GOAL)) continue;
+          if (rnd() < 0.16) g[r2][c2] = 'wall';
+        }
+      }
+      var trapsPlaced = 0, guard = 0;
+      while (trapsPlaced < 4 && guard < 200) {
+        guard++;
+        var tr = Math.floor(rnd() * ROWS), tc = Math.floor(rnd() * COLS);
+        if (sameCell({ r: tr, c: tc }, START) || sameCell({ r: tr, c: tc }, GOAL)) continue;
+        if (g[tr][tc] !== 'empty') continue;
+        if (Math.abs(tr - START.r) + Math.abs(tc - START.c) < 2) continue;
+        g[tr][tc] = 'trap';
+        trapsPlaced++;
+      }
+      ok = isReachable(g);
+      attempts++;
+    }
+    return g;
+  }
+
+  function buildGridDOM() {
+    gridEl.innerHTML = '';
+    gridEl.style.gridTemplateColumns = 'repeat(' + COLS + ', 40px)';
+    cellEls = [];
+    for (var r = 0; r < ROWS; r++) {
+      var rowEls = [];
+      for (var c = 0; c < COLS; c++) {
+        var cell = document.createElement('div');
+        cell.className = 'qgrid-cell';
+        gridEl.appendChild(cell);
+        rowEls.push(cell);
+      }
+      cellEls.push(rowEls);
+    }
+  }
+
+  function getQ(r, c) {
+    var k = key(r, c);
+    if (!Q[k]) Q[k] = [0, 0, 0, 0];
+    return Q[k];
+  }
+
+  function bestActionInfo(r, c) {
+    var q = getQ(r, c);
+    var best = 0;
+    for (var a = 1; a < 4; a++) if (q[a] > q[best]) best = a;
+    return { action: best, value: q[best] };
+  }
+
+  function stepEnv(r, c, actionIdx) {
+    var d = ACTIONS[actionIdx];
+    var nr = r + d.dr, nc = c + d.dc;
+    if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || grid[nr][nc] === 'wall') {
+      nr = r; nc = c;
+    }
+    var done = false, reward = STEP_REWARD;
+    if (sameCell({ r: nr, c: nc }, GOAL)) { reward = GOAL_REWARD; done = true; }
+    else if (grid[nr][nc] === 'trap') { reward = TRAP_REWARD; done = true; }
+    return { r: nr, c: nc, reward: reward, done: done };
+  }
+
+  function runEpisode() {
+    var epsilon = parseInt(epsilonInput.value, 10) / 100;
+    var alpha = parseInt(alphaInput.value, 10) / 100;
+    var r = START.r, c = START.c;
+    var total = 0;
+    for (var step = 0; step < MAX_STEPS; step++) {
+      var actionIdx;
+      if (Math.random() < epsilon) actionIdx = Math.floor(Math.random() * 4);
+      else actionIdx = bestActionInfo(r, c).action;
+
+      var res = stepEnv(r, c, actionIdx);
+      var q = getQ(r, c);
+      var target = res.done ? res.reward : res.reward + GAMMA * bestActionInfo(res.r, res.c).value;
+      q[actionIdx] += alpha * (target - q[actionIdx]);
+      total += res.reward;
+      r = res.r; c = res.c;
+      if (res.done) break;
+    }
+    episodes++;
+    return total;
+  }
+
+  function valueBin(v, minV, maxV) {
+    if (maxV - minV < 1e-6) return 2;
+    var t = (v - minV) / (maxV - minV);
+    return Math.max(0, Math.min(4, Math.floor(t * 5)));
+  }
+
+  function renderGrid() {
+    var values = [];
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        if (grid[r][c] === 'wall' || grid[r][c] === 'trap' || sameCell({ r: r, c: c }, GOAL)) continue;
+        values.push(bestActionInfo(r, c).value);
+      }
+    }
+    var minV = values.length ? Math.min.apply(null, values) : 0;
+    var maxV = values.length ? Math.max.apply(null, values) : 0;
+
+    for (var r2 = 0; r2 < ROWS; r2++) {
+      for (var c2 = 0; c2 < COLS; c2++) {
+        var cell = cellEls[r2][c2];
+        cell.className = 'qgrid-cell';
+        cell.textContent = '';
+        var type = grid[r2][c2];
+        var isGoal = sameCell({ r: r2, c: c2 }, GOAL);
+        var isStart = sameCell({ r: r2, c: c2 }, START);
+        if (type === 'wall') {
+          cell.classList.add('wall');
+        } else if (isGoal) {
+          cell.classList.add('goal');
+          cell.textContent = '🏆';
+        } else if (type === 'trap') {
+          cell.classList.add('trap');
+          cell.textContent = '💀';
+        } else {
+          var info = bestActionInfo(r2, c2);
+          var hasSignal = Q[key(r2, c2)] && Q[key(r2, c2)].some(function (v) { return v !== 0; });
+          if (hasSignal) {
+            cell.classList.add('qbin-' + valueBin(info.value, minV, maxV));
+            var arrow = document.createElement('span');
+            arrow.className = 'qgrid-arrow';
+            arrow.textContent = ACTIONS[info.action].sym;
+            cell.appendChild(arrow);
+          }
+          if (isStart) cell.classList.add('start');
+        }
+      }
+    }
+  }
+
+  function updateStats(lastReward) {
+    statEpisodes.textContent = episodes;
+    if (lastReward !== undefined) statLastReward.textContent = lastReward;
+  }
+
+  function trainEpisodes(n) {
+    stopPlaying();
+    var lastReward = 0;
+    for (var i = 0; i < n; i++) lastReward = runEpisode();
+    renderGrid();
+    updateStats(lastReward);
+    resultBanner.classList.add('hidden');
+  }
+
+  function stopPlaying() {
+    playing = false;
+    playBtn.textContent = '🤖 Reproducir política';
+    if (playTimer) { clearInterval(playTimer); playTimer = null; }
+  }
+
+  function playPolicy() {
+    stopPlaying();
+    renderGrid();
+    var r = START.r, c = START.c;
+    var steps = 0;
+    var visited = {};
+    playing = true;
+    playBtn.textContent = '⏸ Detener';
+    resultBanner.classList.add('hidden');
+    playTimer = setInterval(function () {
+      var cellNow = cellEls[r][c];
+      if (!sameCell({ r: r, c: c }, GOAL) && grid[r][c] !== 'trap') {
+        cellNow.classList.add('play-trail-mark');
+      }
+      cellEls.forEach(function (row) { row.forEach(function (cell) { cell.classList.remove('agent-here'); }); });
+      cellEls[r][c].classList.add('agent-here');
+
+      if (sameCell({ r: r, c: c }, GOAL)) {
+        stopPlaying();
+        resultBanner.textContent = '¡Llegó a la meta en ' + steps + ' pasos!';
+        resultBanner.className = 'success-banner';
+        resultBanner.classList.remove('hidden');
+        return;
+      }
+      if (grid[r][c] === 'trap') {
+        stopPlaying();
+        resultBanner.textContent = 'Cayó en una trampa después de ' + steps + ' pasos. Entrena más episodios.';
+        resultBanner.className = 'success-banner fail';
+        resultBanner.classList.remove('hidden');
+        return;
+      }
+      if (steps >= MAX_STEPS || visited[key(r, c)] >= 3) {
+        stopPlaying();
+        resultBanner.textContent = 'El agente quedó dando vueltas sin llegar a la meta. Entrena más episodios.';
+        resultBanner.className = 'success-banner fail';
+        resultBanner.classList.remove('hidden');
+        return;
+      }
+      visited[key(r, c)] = (visited[key(r, c)] || 0) + 1;
+
+      var action = bestActionInfo(r, c).action;
+      var res = stepEnv(r, c, action);
+      r = res.r; c = res.c;
+      steps++;
+    }, Math.max(340 - parseInt(speedSlider.value, 10), 20));
+  }
+
+  newWorldBtn.addEventListener('click', function () {
+    stopPlaying();
+    grid = makeWorld();
+    Q = {};
+    episodes = 0;
+    buildGridDOM();
+    renderGrid();
+    updateStats(0);
+    statLastReward.textContent = '—';
+    resultBanner.classList.add('hidden');
+  });
+
+  resetQBtn.addEventListener('click', function () {
+    stopPlaying();
+    Q = {};
+    episodes = 0;
+    renderGrid();
+    updateStats(0);
+    statLastReward.textContent = '—';
+    resultBanner.classList.add('hidden');
+  });
+
+  train1Btn.addEventListener('click', function () { trainEpisodes(1); });
+  train100Btn.addEventListener('click', function () { trainEpisodes(100); });
+  playBtn.addEventListener('click', function () { if (playing) stopPlaying(); else playPolicy(); });
+
+  epsilonInput.addEventListener('input', function () {
+    epsilonValue.textContent = (parseInt(epsilonInput.value, 10) / 100).toFixed(2);
+  });
+  alphaInput.addEventListener('input', function () {
+    alphaValue.textContent = (parseInt(alphaInput.value, 10) / 100).toFixed(2);
+  });
+
+  grid = makeWorld();
+  buildGridDOM();
+  renderGrid();
+})();
+</script>

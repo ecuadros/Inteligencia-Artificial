@@ -1,0 +1,325 @@
+---
+layout: demo
+title: "Segmentación de clientes con K-means"
+subtitle: "El mismo algoritmo del demo anterior, aplicado a un problema real de negocio: ¿qué perfiles de cliente existen en estos datos?"
+eyebrow: "Módulo 4 · No Supervisado y por Refuerzo"
+module: 4
+module_title: "No Supervisado y por Refuerzo"
+prev_url: "/modulo-04-no-supervisado-refuerzo/kmeans-paso-a-paso.html"
+prev_title: "K-means paso a paso"
+next_url: "/modulo-04-no-supervisado-refuerzo/q-learning-grid.html"
+next_title: "Q-learning jugable en grid world"
+---
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#practica">Práctica</a>
+  <a href="#mecanica">Cómo funciona</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>¿Cuántos tipos de cliente tienes, en realidad?</h2>
+  <p>
+    Un equipo de marketing tiene los datos de ingreso anual y puntaje de gasto de cientos de clientes, pero
+    ninguna etiqueta que diga "este es premium" o "este es ahorrador". Quiere diseñar campañas distintas
+    para perfiles distintos — pero primero necesita <strong>descubrir esos perfiles</strong> a partir de los
+    datos.
+  </p>
+  <p>
+    Este es exactamente el mismo problema del demo anterior, pero con dos decisiones extra que todo
+    ingeniero enfrenta al aplicar K-means en el mundo real: <strong>¿cuántos grupos (K) tiene sentido
+    buscar?</strong> y <strong>¿qué significa cada grupo una vez encontrado?</strong>
+  </p>
+</section>
+
+<section class="demo-section" id="practica">
+  <span class="section-kicker">// práctica</span>
+  <h2>Elige K con el método del codo, luego interpreta los grupos</h2>
+  <p>
+    Primero calcula la inercia para varios valores de K. Busca el "codo" — el punto donde agregar más
+    grupos deja de reducir mucho la inercia — y haz clic en esa barra para correr K-means con ese K.
+  </p>
+
+  <div class="game-panel">
+    <div class="chart-box wide">
+      <h3>Método del codo — inercia por valor de K</h3>
+      <div class="elbow-bars" id="elbow-bars"></div>
+      <p class="game-hint">Cada barra ya corrió K-means (con varios reinicios) para ese K. Haz clic en una para verlo en el mapa de abajo.</p>
+    </div>
+
+    <div class="chart-box wide">
+      <h3>Clientes: ingreso anual vs. puntaje de gasto</h3>
+      <div id="seg-scatter"></div>
+    </div>
+
+    <div class="vacuum-controls">
+      <button id="seg-recompute">🎲 Nuevo conjunto de clientes</button>
+    </div>
+
+    <div class="vacuum-stats">
+      <div class="stat-box"><div class="stat-value" id="seg-stat-k">—</div><div class="stat-label">K elegido</div></div>
+      <div class="stat-box"><div class="stat-value" id="seg-stat-inertia">—</div><div class="stat-label">Inercia</div></div>
+      <div class="stat-box"><div class="stat-value" id="seg-stat-n">—</div><div class="stat-label">Clientes</div></div>
+    </div>
+
+    <div class="segment-grid" id="segment-grid"></div>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>El método del codo y la interpretación de negocio</h2>
+  <p>
+    K-means siempre reduce la inercia al aumentar K (más centroides = puntos más cerca de alguno). Si
+    eligieras K igual al número de clientes, la inercia sería cero — pero eso no son "segmentos", es memorizar
+    cada cliente. El <strong>método del codo</strong> busca el punto donde la curva deja de bajar
+    rápido: agregar otro grupo ya no compra mucha compactación extra.
+  </p>
+  <p>
+    Encontrar los grupos es solo la mitad del trabajo. La otra mitad —que ningún algoritmo hace por
+    ti— es <strong>ponerles nombre</strong>: mirar el centroide de cada grupo (su ingreso y gasto promedio)
+    y traducirlo a una decisión de negocio, como "clientes premium: alto ingreso, alto gasto — prioriza
+    retención" o "sensibles a promociones: bajo ingreso, alto gasto — atrapa la atención con ofertas".
+  </p>
+  <div class="callout accent2">
+    <strong>El algoritmo no sabe de negocios:</strong> K-means solo ve números y distancias. Las etiquetas
+    "premium", "ahorrador", etc. las genera este demo con una regla simple (comparar cada centroide contra
+    el promedio general) — en la práctica, ese paso lo hace un analista que conoce el contexto.
+  </div>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>Mirando la curva del codo, ¿en qué K dirías que está el "codo"? ¿Coincide con lo que ves visualmente en el mapa de puntos?</li>
+    <li>¿Qué riesgo de negocio tiene elegir un K demasiado alto? ¿Y uno demasiado bajo?</li>
+    <li>Si además del ingreso y el gasto tuvieras la edad del cliente, ¿cómo cambiaría el resultado? ¿Por qué normalizar las variables importaría aún más?</li>
+    <li>¿Qué decisión de marketing tomarías distinto para el segmento con mayor gasto promedio frente al de menor gasto promedio?</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  var CLUSTER_COLORS = ['cluster-0', 'cluster-1', 'cluster-2', 'cluster-3', 'cluster-4', 'cluster-5'];
+  var K_RANGE = [1, 2, 3, 4, 5, 6, 7, 8];
+
+  function mulberry32(a) {
+    return function () {
+      var t = (a += 0x6D2B79F5);
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  var rand = mulberry32(Date.now() % 1e9);
+
+  function gaussian(rnd) {
+    var u = 1 - rnd(), v = rnd();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  var PROFILES = [
+    { income: [20, 40], spend: [10, 30], n: 22 },
+    { income: [20, 40], spend: [70, 90], n: 18 },
+    { income: [75, 100], spend: [10, 30], n: 18 },
+    { income: [75, 100], spend: [70, 90], n: 20 },
+    { income: [45, 65], spend: [40, 60], n: 26 }
+  ];
+
+  function genCustomers() {
+    var pts = [];
+    PROFILES.forEach(function (p) {
+      var cx = (p.income[0] + p.income[1]) / 2, cy = (p.spend[0] + p.spend[1]) / 2;
+      var sx = (p.income[1] - p.income[0]) / 3.2, sy = (p.spend[1] - p.spend[0]) / 3.2;
+      for (var i = 0; i < p.n; i++) {
+        pts.push({
+          income: Math.max(5, Math.min(110, cx + gaussian(rand) * sx)),
+          spend: Math.max(1, Math.min(100, cy + gaussian(rand) * sy))
+        });
+      }
+    });
+    return pts;
+  }
+
+  function distSq(a, b) {
+    var dx = a.income - b.income, dy = a.spend - b.spend;
+    return dx * dx + dy * dy;
+  }
+
+  function runKMeansOnce(points, k, rnd) {
+    var shuffled = points.slice().sort(function () { return rnd() - 0.5; });
+    var centroids = shuffled.slice(0, k).map(function (p) { return { income: p.income, spend: p.spend }; });
+    var assignments = points.map(function () { return 0; });
+    for (var iter = 0; iter < 60; iter++) {
+      var changed = false;
+      var newAssign = points.map(function (p) {
+        var best = 0, bestD = Infinity;
+        centroids.forEach(function (c, ci) {
+          var d = distSq(p, c);
+          if (d < bestD) { bestD = d; best = ci; }
+        });
+        return best;
+      });
+      for (var i = 0; i < newAssign.length; i++) if (newAssign[i] !== assignments[i]) changed = true;
+      assignments = newAssign;
+      centroids.forEach(function (c, ci) {
+        var members = points.filter(function (p, i) { return assignments[i] === ci; });
+        if (members.length) {
+          c.income = d3.mean(members, function (p) { return p.income; });
+          c.spend = d3.mean(members, function (p) { return p.spend; });
+        }
+      });
+      if (!changed && iter > 0) break;
+    }
+    var inertia = 0;
+    points.forEach(function (p, i) { inertia += distSq(p, centroids[assignments[i]]); });
+    return { centroids: centroids, assignments: assignments, inertia: inertia };
+  }
+
+  function bestOfNRestarts(points, k, restarts) {
+    var best = null;
+    for (var r = 0; r < restarts; r++) {
+      var result = runKMeansOnce(points, k, mulberry32(1000 * k + r * 37 + 7));
+      if (!best || result.inertia < best.inertia) best = result;
+    }
+    return best;
+  }
+
+  function $(id) { return document.getElementById(id); }
+
+  var recomputeBtn = $('seg-recompute');
+  var elbowEl = $('elbow-bars');
+  var segGridEl = $('segment-grid');
+  var statK = $('seg-stat-k'), statInertia = $('seg-stat-inertia'), statN = $('seg-stat-n');
+
+  var margin = { top: 16, right: 16, bottom: 40, left: 48 };
+  var width = 620, height = 420;
+  var innerW = width - margin.left - margin.right;
+  var innerH = height - margin.top - margin.bottom;
+
+  var svg = d3.select('#seg-scatter').append('svg')
+    .attr('viewBox', '0 0 ' + width + ' ' + height)
+    .attr('width', '100%').attr('height', height);
+  var g = svg.append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+  var xAxisG = g.append('g').attr('class', 'axis').attr('transform', 'translate(0,' + innerH + ')');
+  var yAxisG = g.append('g').attr('class', 'axis');
+  var xLabel = svg.append('text').attr('class', 'axis').attr('text-anchor', 'middle')
+    .attr('x', margin.left + innerW / 2).attr('y', height - 4).style('fill', 'var(--muted)').style('font-size', '11px');
+  var yLabel = svg.append('text').attr('class', 'axis').attr('text-anchor', 'middle')
+    .attr('transform', 'rotate(-90)').attr('x', -(margin.top + innerH / 2)).attr('y', 14)
+    .style('fill', 'var(--muted)').style('font-size', '11px');
+  xLabel.text('Ingreso anual (miles de soles)');
+  yLabel.text('Puntaje de gasto (0-100)');
+
+  var xScale = d3.scaleLinear().domain([0, 115]).range([0, innerW]);
+  var yScale = d3.scaleLinear().domain([0, 100]).range([innerH, 0]);
+  xAxisG.call(d3.axisBottom(xScale).ticks(6));
+  yAxisG.call(d3.axisLeft(yScale).ticks(6));
+
+  var customers = [];
+  var elbowResults = [];
+  var selectedK = 5;
+
+  function computeElbow() {
+    elbowResults = K_RANGE.map(function (k) {
+      return { k: k, result: bestOfNRestarts(customers, k, k === 1 ? 1 : 6) };
+    });
+  }
+
+  function renderElbow() {
+    elbowEl.innerHTML = '';
+    var maxInertia = d3.max(elbowResults, function (r) { return r.result.inertia; });
+    elbowResults.forEach(function (r) {
+      var col = document.createElement('div');
+      col.className = 'elbow-bar-col';
+      var bar = document.createElement('div');
+      bar.className = 'elbow-bar' + (r.k === selectedK ? ' selected' : '');
+      var pct = Math.max(4, (r.result.inertia / maxInertia) * 100);
+      bar.style.height = pct + '%';
+      bar.addEventListener('click', function () { selectedK = r.k; renderElbow(); applySelection(); });
+      var label = document.createElement('div');
+      label.className = 'elbow-bar-label';
+      label.textContent = 'K=' + r.k;
+      col.appendChild(bar);
+      col.appendChild(label);
+      elbowEl.appendChild(col);
+    });
+  }
+
+  function labelForCentroid(c, meanIncome, meanSpend) {
+    var highIncome = c.income >= meanIncome;
+    var highSpend = c.spend >= meanSpend;
+    if (highIncome && highSpend) return 'Premium';
+    if (highIncome && !highSpend) return 'Ahorradores';
+    if (!highIncome && highSpend) return 'Sensibles a promos';
+    return 'Bajo compromiso';
+  }
+
+  function renderSegments(result) {
+    var meanIncome = d3.mean(customers, function (p) { return p.income; });
+    var meanSpend = d3.mean(customers, function (p) { return p.spend; });
+    segGridEl.innerHTML = '';
+    result.centroids.forEach(function (c, ci) {
+      var count = result.assignments.filter(function (a) { return a === ci; }).length;
+      var card = document.createElement('div');
+      card.className = 'segment-card';
+      card.style.borderLeftColor = 'var(--' + (['accent', 'accent2', 'accent3', 'danger', 'warn', 'accent4'][ci % 6]) + ')';
+      var name = document.createElement('div');
+      name.className = 'segment-name';
+      name.textContent = (ci + 1) + '. ' + labelForCentroid(c, meanIncome, meanSpend);
+      var meta = document.createElement('div');
+      meta.className = 'segment-meta';
+      meta.innerHTML = count + ' clientes<br>Ingreso prom.: ' + c.income.toFixed(1) + 'k<br>Gasto prom.: ' + c.spend.toFixed(1);
+      card.appendChild(name);
+      card.appendChild(meta);
+      segGridEl.appendChild(card);
+    });
+  }
+
+  function applySelection() {
+    var entry = elbowResults.filter(function (r) { return r.k === selectedK; })[0];
+    var result = entry.result;
+
+    var sel = g.selectAll('circle.data-point').data(customers);
+    sel.enter().append('circle').attr('class', 'data-point').attr('r', 5)
+      .merge(sel)
+      .attr('cx', function (d) { return xScale(d.income); })
+      .attr('cy', function (d) { return yScale(d.spend); })
+      .attr('class', function (d, i) { return 'data-point ' + CLUSTER_COLORS[result.assignments[i] % 6]; });
+    sel.exit().remove();
+
+    var csel = g.selectAll('path.centroid-marker').data(result.centroids);
+    csel.enter().append('path').attr('class', 'centroid-marker')
+      .attr('d', d3.symbol().type(d3.symbolDiamond).size(220))
+      .merge(csel)
+      .attr('transform', function (d) { return 'translate(' + xScale(d.income) + ',' + yScale(d.spend) + ')'; })
+      .attr('class', function (d, ci) { return 'centroid-marker ' + CLUSTER_COLORS[ci % 6]; });
+    csel.exit().remove();
+
+    statK.textContent = selectedK;
+    statInertia.textContent = result.inertia.toFixed(1);
+    statN.textContent = customers.length;
+
+    renderSegments(result);
+  }
+
+  function fullRecompute() {
+    customers = genCustomers();
+    computeElbow();
+    renderElbow();
+    applySelection();
+  }
+
+  recomputeBtn.addEventListener('click', fullRecompute);
+
+  fullRecompute();
+})();
+</script>
