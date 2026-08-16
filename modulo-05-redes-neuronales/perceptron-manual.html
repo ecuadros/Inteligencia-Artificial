@@ -1,0 +1,342 @@
+---
+layout: demo
+title: "Perceptrón con pesos ajustables a mano"
+subtitle: "Antes de entrenar una red con miles de pesos, mueve los tres números de una neurona con tus propias manos."
+eyebrow: "Módulo 5 · Redes Neuronales y Deep Learning"
+module: 5
+module_title: "Redes Neuronales y Deep Learning"
+prev_url: "/modulo-04-no-supervisado-refuerzo/q-learning-grid.html"
+prev_title: "Q-learning jugable en grid world"
+next_url: "/modulo-05-redes-neuronales/red-digitos-vivo.html"
+next_title: "Red neuronal entrenando en vivo sobre dígitos dibujados"
+---
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#practica">Práctica</a>
+  <a href="#mecanica">Cómo funciona</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>La pieza más pequeña de una red neuronal</h2>
+  <p>
+    Una red neuronal enorme, con millones de parámetros, está construida repitiendo la misma pieza simple
+    miles de veces: un <strong>perceptrón</strong>. Toma unas entradas, las combina con pesos, suma un
+    sesgo, y decide "sí" o "no" según si esa suma cruza un umbral.
+  </p>
+  <p>
+    Ya viste esta misma matemática en el Módulo 3 (regresión logística) — el perceptrón es su primo
+    histórico, de 1958, con una diferencia: en vez de una probabilidad suave, da una decisión dura (0 o 1).
+    Aquí vas a mover los pesos <strong>tú mismo</strong>, a mano, para sentir qué hace cada uno antes de
+    dejar que un algoritmo los ajuste solo.
+  </p>
+</section>
+
+<section class="demo-section" id="practica">
+  <span class="section-kicker">// práctica</span>
+  <h2>Mueve los pesos y mira la neurona reaccionar</h2>
+  <p>
+    Cada punto es un ejemplo con dos características (x₁, x₂). Ajusta w₁, w₂ y el sesgo con los
+    deslizadores — la recta de decisión y la neurona de la derecha reaccionan al instante. Cuando quieras,
+    deja que el algoritmo (la regla de aprendizaje del perceptrón) los ajuste solo.
+  </p>
+
+  <div class="game-panel">
+    <div class="chart-box">
+      <h3>Datos y frontera</h3>
+      <div id="pc-scatter"></div>
+    </div>
+
+    <div class="chart-box">
+      <h3>La neurona</h3>
+      <div id="pc-neuron"></div>
+    </div>
+
+    <div class="vacuum-controls">
+      <button id="pc-class-toggle" class="primary">Clase activa: 0 (roja)</button>
+      <button id="pc-clear">Limpiar puntos</button>
+      <button id="pc-dataset">🎲 Datos de ejemplo</button>
+    </div>
+
+    <div class="vacuum-speed">
+      <span>w₁</span>
+      <input type="range" id="pc-w1" min="-3" max="3" step="0.05" value="0.5" />
+      <span class="mono-value" id="pc-w1-value">0.50</span>
+    </div>
+    <div class="vacuum-speed">
+      <span>w₂</span>
+      <input type="range" id="pc-w2" min="-3" max="3" step="0.05" value="0.5" />
+      <span class="mono-value" id="pc-w2-value">0.50</span>
+    </div>
+    <div class="vacuum-speed">
+      <span>sesgo (b)</span>
+      <input type="range" id="pc-b" min="-5" max="5" step="0.1" value="-2" />
+      <span class="mono-value" id="pc-b-value">-2.0</span>
+    </div>
+
+    <div class="vacuum-controls">
+      <button id="pc-train" class="primary">▶ Entrenar automáticamente</button>
+      <button id="pc-train-step">⏭ Un paso de entrenamiento</button>
+      <button id="pc-reset-weights">↺ Pesos en cero</button>
+    </div>
+
+    <div class="vacuum-stats">
+      <div class="stat-box"><div class="stat-value" id="pc-stat-acc">—</div><div class="stat-label">Precisión</div></div>
+      <div class="stat-box"><div class="stat-value" id="pc-stat-epoch">0</div><div class="stat-label">Épocas entrenadas</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>Suma ponderada, luego un umbral</h2>
+  <p>
+    La neurona calcula <code>z = w₁x₁ + w₂x₂ + b</code>. Si <code>z ≥ 0</code>, dispara (salida 1);
+    si no, se queda apagada (salida 0). Geométricamente, <code>z = 0</code> es exactamente la recta que ves
+    en el gráfico — los pesos determinan su inclinación, el sesgo la desplaza.
+  </p>
+  <p>
+    La <strong>regla de aprendizaje del perceptrón</strong> es la actualización más simple que existe: por
+    cada ejemplo mal clasificado, empuja los pesos un poco en la dirección que lo habría clasificado bien
+    (<code>w ← w + tasa · (etiqueta − predicción) · x</code>). Repite sobre todos los ejemplos, época tras
+    época, hasta que ya no haya errores — si es que existe una recta que los separe.
+  </p>
+  <div class="callout accent2">
+    <strong>El límite de 1969:</strong> un solo perceptrón solo puede aprender fronteras <em>lineales</em>.
+    Minsky y Papert mostraron que ni siquiera puede aprender la función XOR — el mismo ejemplo del Módulo 3
+    que ninguna recta separa. Eso frenó la investigación en redes neuronales por casi una década, hasta que
+    se popularizó apilar varias neuronas en capas (lo que verás en el próximo demo).
+  </div>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>¿Lograste, moviendo los pesos a mano, encontrar una frontera que separe bien los datos? ¿Qué tan distinto fue tu resultado del "Entrenar automáticamente"?</li>
+    <li>¿Qué representa físicamente el sesgo <code>b</code> en la recta que dibuja la neurona?</li>
+    <li>Genera un conjunto de datos donde ninguna recta separe bien las dos clases. ¿Qué le pasa a la precisión, por más que entrenes?</li>
+    <li>¿Por qué crees que apilar varios perceptrones en capas (una red) puede resolver problemas que uno solo no puede?</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  function $(id) { return document.getElementById(id); }
+
+  var w1Input = $('pc-w1'), w1Value = $('pc-w1-value');
+  var w2Input = $('pc-w2'), w2Value = $('pc-w2-value');
+  var bInput = $('pc-b'), bValue = $('pc-b-value');
+  var classToggleBtn = $('pc-class-toggle');
+  var clearBtn = $('pc-clear');
+  var datasetBtn = $('pc-dataset');
+  var trainBtn = $('pc-train'), trainStepBtn = $('pc-train-step'), resetWeightsBtn = $('pc-reset-weights');
+  var statAcc = $('pc-stat-acc'), statEpoch = $('pc-stat-epoch');
+
+  var state = {
+    points: [],
+    activeClass: 0,
+    w1: 0.5, w2: 0.5, b: -2,
+    epoch: 0,
+    training: false,
+    timer: null
+  };
+
+  var margin = { top: 16, right: 16, bottom: 32, left: 40 };
+  var width = 420, height = 380;
+  var innerW = width - margin.left - margin.right;
+  var innerH = height - margin.top - margin.bottom;
+
+  var svg = d3.select('#pc-scatter').append('svg')
+    .attr('viewBox', '0 0 ' + width + ' ' + height).attr('width', '100%').attr('height', height);
+  var g = svg.append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+  var xAxisG = g.append('g').attr('class', 'axis').attr('transform', 'translate(0,' + innerH + ')');
+  var yAxisG = g.append('g').attr('class', 'axis');
+  var boundaryLine = g.append('line').attr('class', 'fit-line model-line');
+  var clickCatcher = g.append('rect').attr('width', innerW).attr('height', innerH).attr('fill', 'transparent').style('cursor', 'crosshair');
+
+  var xScale = d3.scaleLinear().domain([-6, 6]).range([0, innerW]);
+  var yScale = d3.scaleLinear().domain([-6, 6]).range([innerH, 0]);
+  xAxisG.call(d3.axisBottom(xScale).ticks(6));
+  yAxisG.call(d3.axisLeft(yScale).ticks(6));
+
+  var neuronSvg = d3.select('#pc-neuron').append('svg')
+    .attr('viewBox', '0 0 420 380').attr('width', '100%').attr('height', 380);
+
+  var nx1 = 60, nx2 = 140, nOut = 320, nMidY = 190;
+  var edgeW1 = neuronSvg.append('line').attr('class', 'neuron-edge').attr('x1', nx1).attr('y1', 90).attr('x2', nOut).attr('y2', nMidY);
+  var edgeW2 = neuronSvg.append('line').attr('class', 'neuron-edge').attr('x1', nx1).attr('y1', 290).attr('x2', nOut).attr('y2', nMidY);
+  var edgeB = neuronSvg.append('line').attr('class', 'neuron-edge').attr('x1', nx2).attr('y1', 190).attr('x2', nOut).attr('y2', nMidY).attr('stroke-dasharray', '4,3');
+
+  neuronSvg.append('circle').attr('class', 'neuron-node input').attr('cx', nx1).attr('cy', 90).attr('r', 22);
+  neuronSvg.append('circle').attr('class', 'neuron-node input').attr('cx', nx1).attr('cy', 290).attr('r', 22);
+  neuronSvg.append('text').attr('x', nx1).attr('y', 95).attr('text-anchor', 'middle').text('x₁').style('fill', 'var(--text)').style('font-family', 'var(--font-mono)');
+  neuronSvg.append('text').attr('x', nx1).attr('y', 295).attr('text-anchor', 'middle').text('x₂').style('fill', 'var(--text)').style('font-family', 'var(--font-mono)');
+  neuronSvg.append('text').attr('x', nx2).attr('y', 185).attr('text-anchor', 'middle').text('sesgo').style('fill', 'var(--muted)').style('font-size', '10px').style('font-family', 'var(--font-mono)');
+
+  var outNode = neuronSvg.append('circle').attr('class', 'neuron-node output').attr('cx', nOut).attr('cy', nMidY).attr('r', 30);
+  var outText = neuronSvg.append('text').attr('x', nOut).attr('y', nMidY + 6).attr('text-anchor', 'middle').style('font-size', '20px').style('font-weight', 700).style('fill', 'var(--text)').text('0');
+
+  var w1Label = neuronSvg.append('text').attr('class', 'neuron-edge-label').attr('x', (nx1 + nOut) / 2 - 20).attr('y', (90 + nMidY) / 2 - 8).attr('text-anchor', 'middle');
+  var w2Label = neuronSvg.append('text').attr('class', 'neuron-edge-label').attr('x', (nx1 + nOut) / 2 - 20).attr('y', (290 + nMidY) / 2 + 16).attr('text-anchor', 'middle');
+  var zLabel = neuronSvg.append('text').attr('x', nOut).attr('y', nMidY + 55).attr('text-anchor', 'middle').style('fill', 'var(--muted)').style('font-family', 'var(--font-mono)').style('font-size', '11px');
+
+  function genDataset() {
+    function gp(cx, cy, std, label) {
+      var pts = [];
+      for (var i = 0; i < 14; i++) {
+        var u = 1 - Math.random(), v = Math.random();
+        var g1 = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+        var u2 = 1 - Math.random(), v2 = Math.random();
+        var g2 = Math.sqrt(-2 * Math.log(u2)) * Math.cos(2 * Math.PI * v2);
+        pts.push({ x: cx + g1 * std, y: cy + g2 * std, label: label });
+      }
+      return pts;
+    }
+    return gp(-2.2, -1.5, 1.1, 0).concat(gp(2.2, 1.8, 1.1, 1));
+  }
+
+  function predict(x1, x2) {
+    var z = state.w1 * x1 + state.w2 * x2 + state.b;
+    return { z: z, out: z >= 0 ? 1 : 0 };
+  }
+
+  function boundaryEndpoints() {
+    var x0 = xScale.domain()[0], x1 = xScale.domain()[1];
+    if (Math.abs(state.w2) < 1e-6) {
+      var xv = Math.abs(state.w1) < 1e-6 ? 0 : -state.b / state.w1;
+      return [{ x: xv, y: yScale.domain()[0] }, { x: xv, y: yScale.domain()[1] }];
+    }
+    var y0 = -(state.w1 * x0 + state.b) / state.w2;
+    var y1 = -(state.w1 * x1 + state.b) / state.w2;
+    return [{ x: x0, y: y0 }, { x: x1, y: y1 }];
+  }
+
+  function accuracy() {
+    if (!state.points.length) return null;
+    var correct = 0;
+    state.points.forEach(function (p) { if (predict(p.x, p.y).out === p.label) correct++; });
+    return correct / state.points.length;
+  }
+
+  function render() {
+    var sel = g.selectAll('circle.data-point').data(state.points);
+    sel.enter().append('circle').attr('class', 'data-point').attr('r', 5.5)
+      .merge(sel)
+      .attr('cx', function (d) { return xScale(d.x); })
+      .attr('cy', function (d) { return yScale(d.y); })
+      .attr('class', function (d) { return 'data-point ' + (d.label === 0 ? 'cluster-3' : 'cluster-0'); });
+    sel.exit().remove();
+
+    var pts = boundaryEndpoints();
+    boundaryLine.attr('x1', xScale(pts[0].x)).attr('y1', yScale(pts[0].y))
+      .attr('x2', xScale(pts[1].x)).attr('y2', yScale(pts[1].y));
+
+    w1Label.text('w₁=' + state.w1.toFixed(2));
+    w2Label.text('w₂=' + state.w2.toFixed(2));
+    edgeW1.attr('class', 'neuron-edge ' + (state.w1 >= 0 ? 'positive' : 'negative'));
+    edgeW2.attr('class', 'neuron-edge ' + (state.w2 >= 0 ? 'positive' : 'negative'));
+
+    var acc = accuracy();
+    statAcc.textContent = acc === null ? '—' : Math.round(acc * 100) + '%';
+    statEpoch.textContent = state.epoch;
+  }
+
+  function updateNeuronPreview(x1, x2) {
+    var r = predict(x1 === undefined ? 0 : x1, x2 === undefined ? 0 : x2);
+    outText.text(r.out);
+    outNode.classed('active', r.out === 1);
+    zLabel.text('z = ' + r.z.toFixed(2));
+  }
+
+  function trainStep() {
+    if (!state.points.length) return;
+    var lr = 0.15;
+    var anyError = false;
+    state.points.forEach(function (p) {
+      var pred = predict(p.x, p.y).out;
+      var err = p.label - pred;
+      if (err !== 0) {
+        anyError = true;
+        state.w1 += lr * err * p.x;
+        state.w2 += lr * err * p.y;
+        state.b += lr * err;
+      }
+    });
+    state.epoch++;
+    syncSlidersFromState();
+    render();
+    if (!anyError) stopTraining();
+  }
+
+  function syncSlidersFromState() {
+    state.w1 = Math.max(-3, Math.min(3, state.w1));
+    state.w2 = Math.max(-3, Math.min(3, state.w2));
+    state.b = Math.max(-5, Math.min(5, state.b));
+    w1Input.value = state.w1; w1Value.textContent = state.w1.toFixed(2);
+    w2Input.value = state.w2; w2Value.textContent = state.w2.toFixed(2);
+    bInput.value = state.b; bValue.textContent = state.b.toFixed(1);
+  }
+
+  function startTraining() {
+    if (!state.points.length) return;
+    state.training = true;
+    trainBtn.textContent = '⏸ Pausar';
+    state.timer = setInterval(trainStep, 260);
+  }
+
+  function stopTraining() {
+    state.training = false;
+    trainBtn.textContent = '▶ Entrenar automáticamente';
+    if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  }
+
+  clickCatcher.on('click', function (event) {
+    var coords = d3.pointer(event);
+    state.points.push({ x: xScale.invert(coords[0]), y: yScale.invert(coords[1]), label: state.activeClass });
+    render();
+  });
+  clickCatcher.on('mousemove', function (event) {
+    var coords = d3.pointer(event);
+    updateNeuronPreview(xScale.invert(coords[0]), yScale.invert(coords[1]));
+  });
+
+  classToggleBtn.addEventListener('click', function () {
+    state.activeClass = state.activeClass === 0 ? 1 : 0;
+    classToggleBtn.textContent = 'Clase activa: ' + state.activeClass + (state.activeClass === 0 ? ' (roja)' : ' (azul)');
+  });
+  clearBtn.addEventListener('click', function () { state.points = []; render(); });
+  datasetBtn.addEventListener('click', function () { state.points = genDataset(); render(); });
+  trainBtn.addEventListener('click', function () { if (state.training) stopTraining(); else startTraining(); });
+  trainStepBtn.addEventListener('click', function () { if (!state.training) trainStep(); });
+  resetWeightsBtn.addEventListener('click', function () {
+    stopTraining();
+    state.w1 = 0; state.w2 = 0; state.b = 0; state.epoch = 0;
+    syncSlidersFromState();
+    render();
+  });
+
+  [w1Input, w2Input, bInput].forEach(function (input) {
+    input.addEventListener('input', function () {
+      state.w1 = parseFloat(w1Input.value);
+      state.w2 = parseFloat(w2Input.value);
+      state.b = parseFloat(bInput.value);
+      w1Value.textContent = state.w1.toFixed(2);
+      w2Value.textContent = state.w2.toFixed(2);
+      bValue.textContent = state.b.toFixed(1);
+      render();
+    });
+  });
+
+  state.points = genDataset();
+  syncSlidersFromState();
+  render();
+  updateNeuronPreview(0, 0);
+})();
+</script>

@@ -1,0 +1,428 @@
+---
+layout: demo
+title: "Red neuronal entrenando en vivo sobre dígitos dibujados"
+subtitle: "Tú generas los datos, tú entrenas el modelo, tú lo pruebas — todo en el navegador, sin ningún dataset descargado de antemano."
+eyebrow: "Módulo 5 · Redes Neuronales y Deep Learning"
+module: 5
+module_title: "Redes Neuronales y Deep Learning"
+prev_url: "/modulo-05-redes-neuronales/perceptron-manual.html"
+prev_title: "Perceptrón con pesos ajustables a mano"
+next_url: "/modulo-05-redes-neuronales/retropropagacion.html"
+next_title: "Visualizador de retropropagación"
+---
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#practica">Práctica</a>
+  <a href="#mecanica">Cómo funciona</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>De un perceptrón a una red que reconoce dígitos</h2>
+  <p>
+    Un solo perceptrón separa dos clases con una recta. Pero "¿qué dígito es este, del 0 al 9?" es un
+    problema mucho más difícil: diez clases, y una frontera de decisión que ninguna recta puede dibujar.
+    La solución clásica es apilar muchas neuronas en <strong>capas</strong> — una red neuronal — entrenada
+    con ejemplos reales.
+  </p>
+  <p>
+    Aquí no vas a descargar ningún dataset: <strong>tú vas a dibujar los ejemplos</strong>, etiquetarlos, y
+    entrenar una red pequeña (con TensorFlow.js, corriendo enteramente en tu navegador) para que aprenda a
+    reconocer tu letra.
+  </p>
+  <div class="callout" id="tf-status">Cargando TensorFlow.js…</div>
+</section>
+
+<section class="demo-section" id="practica">
+  <span class="section-kicker">// práctica</span>
+  <h2>Dibuja, etiqueta, entrena, prueba</h2>
+  <p>
+    Dibuja un dígito, elige su etiqueta y pulsa "Agregar ejemplo". Repite con varios dígitos distintos
+    (idealmente más de un ejemplo por dígito) y luego pulsa "Entrenar red". Cuando termine, dibuja un dígito
+    nuevo y pulsa "Predecir".
+  </p>
+
+  <div class="game-panel">
+    <div class="vacuum-side" style="flex:0 0 auto;">
+      <div class="digit-canvas-wrap">
+        <canvas id="digit-canvas" width="200" height="200"></canvas>
+      </div>
+      <p class="game-hint">Dibuja con el mouse o el dedo. Trazo grueso, como tiza blanca sobre pizarra.</p>
+      <div class="demo-controls" id="digit-label-row"></div>
+      <div class="demo-controls">
+        <button id="digit-clear">🧹 Borrar dibujo</button>
+        <button id="digit-add" class="primary">➕ Agregar ejemplo</button>
+        <button id="digit-predict" class="primary" disabled>🔮 Predecir</button>
+      </div>
+    </div>
+
+    <div class="vacuum-side">
+      <h3 style="margin-top:0;">Ejemplos recolectados (<span id="digit-count">0</span>)</h3>
+      <div class="digit-gallery" id="digit-gallery"></div>
+      <p class="game-hint" id="digit-train-hint">Agrega al menos 2 dígitos distintos, con 2+ ejemplos cada uno.</p>
+
+      <div class="demo-controls">
+        <button id="digit-train" class="primary" disabled>🚀 Entrenar red</button>
+        <button id="digit-reset-model">↺ Olvidar red entrenada</button>
+      </div>
+
+      <canvas id="loss-sparkline" width="360" height="90" style="width:100%;max-width:360px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-top:0.6rem;"></canvas>
+
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-value" id="stat-epoch">—</div><div class="stat-label">Época</div></div>
+        <div class="stat-box"><div class="stat-value" id="stat-loss">—</div><div class="stat-label">Pérdida</div></div>
+        <div class="stat-box"><div class="stat-value" id="stat-trainacc">—</div><div class="stat-label">Precisión (train)</div></div>
+      </div>
+
+      <div id="predict-result" class="hidden">
+        <h3>Predicción</h3>
+        <p class="reveal-hint" id="predict-summary"></p>
+        <div class="predict-bars" id="predict-bars"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>Píxeles adentro, probabilidades afuera</h2>
+  <p>
+    Cada dibujo se reduce a una imagen de 16×16 en escala de grises (256 números entre 0 y 1) y se pasa
+    como entrada a la red: una capa densa oculta de 32 neuronas con activación ReLU, y una capa de salida
+    de 10 neuronas con activación <strong>softmax</strong>, que convierte los diez puntajes en una
+    distribución de probabilidad que suma 1 — "qué tan seguro está de cada dígito posible".
+  </p>
+  <p>
+    El entrenamiento minimiza <em>entropía cruzada categórica</em> (la versión de la pérdida de la
+    regresión logística del Módulo 3, extendida a más de dos clases) usando el optimizador Adam — una
+    variante más rápida del descenso de gradiente que ya conoces.
+  </p>
+  <div class="callout accent2">
+    <strong>Pocos ejemplos, poca generalización:</strong> con solo un puñado de dibujos tuyos, la red
+    aprende a reconocer <em>tu</em> letra específica — no la de cualquier persona. Si alguien más dibuja el
+    mismo dígito con trazo distinto, es probable que la red falle. Esa es exactamente la razón por la que
+    los modelos reales (como el que reconoce dígitos escritos a mano en el correo postal) se entrenan con
+    decenas de miles de ejemplos de personas distintas.
+  </div>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>¿La red predijo bien un dígito dibujado más "descuidado" que tus ejemplos de entrenamiento? ¿Qué te dice eso sobre generalización?</li>
+    <li>Si le pidieras a un compañero que pruebe tu red con su propia letra, ¿esperarías que funcione igual de bien? ¿Por qué?</li>
+    <li>¿Qué pasaría con la pérdida y la precisión si agregas ejemplos con la etiqueta equivocada a propósito?</li>
+    <li>Esta idea de "el modelo aprende de quien lo entrenó, no de la población general" — ¿qué relación tiene con la ética de los datasets que vas a ver en el Módulo 8?</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  function $(id) { return document.getElementById(id); }
+
+  var tfStatus = $('tf-status');
+  var canvas = $('digit-canvas');
+  var ctx = canvas.getContext('2d');
+  var labelRow = $('digit-label-row');
+  var clearBtn = $('digit-clear');
+  var addBtn = $('digit-add');
+  var predictBtn = $('digit-predict');
+  var galleryEl = $('digit-gallery');
+  var countEl = $('digit-count');
+  var trainHint = $('digit-train-hint');
+  var trainBtn = $('digit-train');
+  var resetModelBtn = $('digit-reset-model');
+  var sparkline = $('loss-sparkline');
+  var sctx = sparkline.getContext('2d');
+  var statEpoch = $('stat-epoch'), statLoss = $('stat-loss'), statTrainAcc = $('stat-trainacc');
+  var predictResult = $('predict-result');
+  var predictSummary = $('predict-summary');
+  var predictBars = $('predict-bars');
+
+  var IMG_SIZE = 16;
+  var state = {
+    selectedLabel: 0,
+    examples: [],
+    model: null,
+    trained: false,
+    training: false,
+    history: [],
+    drawing: false
+  };
+
+  function initCanvas() {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 14;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  }
+  initCanvas();
+
+  function canvasPos(e) {
+    var rect = canvas.getBoundingClientRect();
+    var cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    var cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    return { x: cx * (canvas.width / rect.width), y: cy * (canvas.height / rect.height) };
+  }
+
+  var lastPos = null;
+  function startDraw(e) { e.preventDefault(); state.drawing = true; lastPos = canvasPos(e); }
+  function moveDraw(e) {
+    if (!state.drawing) return;
+    e.preventDefault();
+    var p = canvasPos(e);
+    ctx.beginPath();
+    ctx.moveTo(lastPos.x, lastPos.y);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    lastPos = p;
+  }
+  function endDraw() { state.drawing = false; }
+
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', moveDraw);
+  window.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('touchstart', startDraw, { passive: false });
+  canvas.addEventListener('touchmove', moveDraw, { passive: false });
+  canvas.addEventListener('touchend', endDraw);
+
+  clearBtn.addEventListener('click', initCanvas);
+
+  function buildLabelRow() {
+    labelRow.innerHTML = '';
+    for (var i = 0; i <= 9; i++) {
+      (function (digit) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = String(digit);
+        btn.className = digit === state.selectedLabel ? 'active' : '';
+        btn.addEventListener('click', function () {
+          state.selectedLabel = digit;
+          buildLabelRow();
+        });
+        labelRow.appendChild(btn);
+      })(i);
+    }
+  }
+  buildLabelRow();
+
+  function downsample() {
+    var off = document.createElement('canvas');
+    off.width = IMG_SIZE; off.height = IMG_SIZE;
+    var octx = off.getContext('2d');
+    octx.imageSmoothingEnabled = true;
+    octx.drawImage(canvas, 0, 0, IMG_SIZE, IMG_SIZE);
+    var data = octx.getImageData(0, 0, IMG_SIZE, IMG_SIZE).data;
+    var pixels = new Float32Array(IMG_SIZE * IMG_SIZE);
+    for (var i = 0; i < pixels.length; i++) pixels[i] = data[i * 4] / 255;
+    return pixels;
+  }
+
+  function isCanvasBlank() {
+    var data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    for (var i = 0; i < data.length; i += 4) if (data[i] > 20) return false;
+    return true;
+  }
+
+  function renderGallery() {
+    galleryEl.innerHTML = '';
+    state.examples.forEach(function (ex, idx) {
+      var thumb = document.createElement('div');
+      thumb.className = 'digit-thumb';
+      var c = document.createElement('canvas');
+      c.width = 44; c.height = 44;
+      var tctx = c.getContext('2d');
+      var img = tctx.createImageData(IMG_SIZE, IMG_SIZE);
+      for (var i = 0; i < ex.pixels.length; i++) {
+        var v = Math.round(ex.pixels[i] * 255);
+        img.data[i * 4] = v; img.data[i * 4 + 1] = v; img.data[i * 4 + 2] = v; img.data[i * 4 + 3] = 255;
+      }
+      var tmp = document.createElement('canvas');
+      tmp.width = IMG_SIZE; tmp.height = IMG_SIZE;
+      tmp.getContext('2d').putImageData(img, 0, 0);
+      tctx.imageSmoothingEnabled = false;
+      tctx.drawImage(tmp, 0, 0, 44, 44);
+      thumb.appendChild(c);
+
+      var label = document.createElement('span');
+      label.className = 'digit-thumb-label';
+      label.textContent = String(ex.label);
+      thumb.appendChild(label);
+
+      var removeBtn = document.createElement('button');
+      removeBtn.className = 'digit-thumb-remove';
+      removeBtn.textContent = '×';
+      removeBtn.addEventListener('click', function () {
+        state.examples.splice(idx, 1);
+        renderGallery();
+        updateTrainReadiness();
+      });
+      thumb.appendChild(removeBtn);
+
+      galleryEl.appendChild(thumb);
+    });
+    countEl.textContent = state.examples.length;
+  }
+
+  function updateTrainReadiness() {
+    var byLabel = {};
+    state.examples.forEach(function (ex) { byLabel[ex.label] = (byLabel[ex.label] || 0) + 1; });
+    var distinctLabels = Object.keys(byLabel).length;
+    var ready = distinctLabels >= 2 && state.examples.length >= 6;
+    trainBtn.disabled = !ready;
+    trainHint.textContent = ready
+      ? 'Listo para entrenar con ' + state.examples.length + ' ejemplos de ' + distinctLabels + ' dígitos distintos.'
+      : 'Agrega al menos 2 dígitos distintos, con 2+ ejemplos cada uno (llevas ' + state.examples.length + ' ejemplos, ' + distinctLabels + ' dígitos).';
+  }
+
+  addBtn.addEventListener('click', function () {
+    if (isCanvasBlank()) return;
+    state.examples.push({ pixels: downsample(), label: state.selectedLabel });
+    renderGallery();
+    updateTrainReadiness();
+    initCanvas();
+  });
+
+  function drawSparkline() {
+    sctx.clearRect(0, 0, sparkline.width, sparkline.height);
+    if (state.history.length < 2) return;
+    var maxLoss = Math.max.apply(null, state.history.map(function (h) { return h.loss; }));
+    var pad = 6;
+    sctx.strokeStyle = '#ffee00';
+    sctx.lineWidth = 2;
+    sctx.beginPath();
+    state.history.forEach(function (h, i) {
+      var x = pad + (sparkline.width - pad * 2) * (i / (state.history.length - 1));
+      var y = sparkline.height - pad - (sparkline.height - pad * 2) * (h.loss / (maxLoss || 1));
+      if (i === 0) sctx.moveTo(x, y); else sctx.lineTo(x, y);
+    });
+    sctx.stroke();
+  }
+
+  function buildModel() {
+    var model = tf.sequential();
+    model.add(tf.layers.dense({ units: 32, activation: 'relu', inputShape: [IMG_SIZE * IMG_SIZE] }));
+    model.add(tf.layers.dense({ units: 10, activation: 'softmax' }));
+    model.compile({ optimizer: tf.train.adam(0.05), loss: 'categoricalCrossentropy', metrics: ['accuracy'] });
+    return model;
+  }
+
+  function trainModel() {
+    if (state.training || !state.examples.length) return;
+    state.training = true;
+    trainBtn.disabled = true;
+    predictBtn.disabled = true;
+    state.history = [];
+    if (state.model) state.model.dispose();
+    state.model = buildModel();
+
+    var xsData = [];
+    var ysData = [];
+    state.examples.forEach(function (ex) {
+      xsData.push(Array.prototype.slice.call(ex.pixels));
+      var row = new Array(10).fill(0);
+      row[ex.label] = 1;
+      ysData.push(row);
+    });
+    var xs = tf.tensor2d(xsData);
+    var ys = tf.tensor2d(ysData);
+
+    var epochs = 60;
+    state.model.fit(xs, ys, {
+      epochs: epochs,
+      shuffle: true,
+      callbacks: {
+        onEpochEnd: function (epoch, logs) {
+          state.history.push({ epoch: epoch, loss: logs.loss, acc: logs.acc });
+          statEpoch.textContent = (epoch + 1) + ' / ' + epochs;
+          statLoss.textContent = logs.loss.toFixed(4);
+          statTrainAcc.textContent = Math.round(logs.acc * 100) + '%';
+          drawSparkline();
+        }
+      }
+    }).then(function () {
+      xs.dispose(); ys.dispose();
+      state.training = false;
+      state.trained = true;
+      trainBtn.disabled = false;
+      predictBtn.disabled = false;
+      trainHint.textContent = 'Red entrenada. Dibuja un dígito nuevo y pulsa "Predecir".';
+    });
+  }
+
+  trainBtn.addEventListener('click', trainModel);
+
+  resetModelBtn.addEventListener('click', function () {
+    if (state.model) { state.model.dispose(); state.model = null; }
+    state.trained = false;
+    state.history = [];
+    predictBtn.disabled = true;
+    predictResult.classList.add('hidden');
+    statEpoch.textContent = '—'; statLoss.textContent = '—'; statTrainAcc.textContent = '—';
+    sctx.clearRect(0, 0, sparkline.width, sparkline.height);
+  });
+
+  predictBtn.addEventListener('click', function () {
+    if (!state.model || isCanvasBlank()) return;
+    var pixels = downsample();
+    var input = tf.tensor2d([Array.prototype.slice.call(pixels)]);
+    var output = state.model.predict(input);
+    var probs = output.dataSync();
+    input.dispose(); output.dispose();
+
+    var order = Array.from(probs.keys()).sort(function (a, b) { return probs[b] - probs[a]; });
+    var top = order[0];
+
+    predictBars.innerHTML = '';
+    for (var d = 0; d <= 9; d++) {
+      var row = document.createElement('div');
+      row.className = 'predict-bar-row' + (d === top ? ' top' : '');
+      var label = document.createElement('span');
+      label.className = 'predict-bar-label';
+      label.textContent = String(d);
+      var track = document.createElement('span');
+      track.className = 'predict-bar-track';
+      var fill = document.createElement('span');
+      fill.className = 'predict-bar-fill';
+      fill.style.width = (probs[d] * 100).toFixed(1) + '%';
+      track.appendChild(fill);
+      var value = document.createElement('span');
+      value.className = 'predict-bar-value';
+      value.textContent = Math.round(probs[d] * 100) + '%';
+      row.appendChild(label); row.appendChild(track); row.appendChild(value);
+      predictBars.appendChild(row);
+    }
+    predictSummary.textContent = 'La red cree que dibujaste un ' + top + ', con ' + Math.round(probs[top] * 100) + '% de confianza.';
+    predictResult.classList.remove('hidden');
+  });
+
+  updateTrainReadiness();
+
+  function checkTf() {
+    if (typeof tf === 'undefined') {
+      tfStatus.textContent = 'No se pudo cargar TensorFlow.js. Revisa tu conexión y recarga la página.';
+      return;
+    }
+    // La red es diminuta (un puñado de ejemplos, ~8500 parámetros): el backend CPU
+    // responde más rápido y parejo que WebGL, cuyo overhead por operación domina
+    // justo en modelos de este tamaño y evita depender de aceleración GPU real.
+    tf.setBackend('cpu').then(function () { return tf.ready(); }).then(function () {
+      tfStatus.textContent = 'TensorFlow.js listo (backend: ' + tf.getBackend() + '). Todo el entrenamiento ocurre en tu navegador.';
+    });
+  }
+  if (typeof tf === 'undefined') {
+    window.addEventListener('load', checkTf);
+  } else {
+    checkTf();
+  }
+})();
+</script>

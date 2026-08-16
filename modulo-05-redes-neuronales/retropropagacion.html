@@ -1,0 +1,393 @@
+---
+layout: demo
+title: "Visualizador de retropropagación"
+subtitle: "La red se equivocó. ¿Cómo sabe cada peso, individualmente, en qué dirección moverse para mejorar?"
+eyebrow: "Módulo 5 · Redes Neuronales y Deep Learning"
+module: 5
+module_title: "Redes Neuronales y Deep Learning"
+prev_url: "/modulo-05-redes-neuronales/red-digitos-vivo.html"
+prev_title: "Red neuronal entrenando en vivo sobre dígitos dibujados"
+---
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#practica">Práctica</a>
+  <a href="#mecanica">Cómo funciona</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>¿Cómo se reparte la culpa del error?</h2>
+  <p>
+    En el Módulo 3, el descenso de gradiente ajustaba dos o tres pesos directamente — era fácil calcular
+    hacia dónde moverlos. Una red con capas ocultas tiene un problema extra: los pesos de la primera capa
+    no tocan la salida directamente, pasan por una capa intermedia. ¿Cómo sabe un peso escondido en el
+    medio de la red qué tanto contribuyó al error final?
+  </p>
+  <p>
+    La respuesta es la <strong>retropropagación</strong> (backpropagation): la regla de la cadena del
+    cálculo, aplicada capa por capa, de atrás hacia adelante. Aquí vas a ver, número por número, cómo un
+    error en la salida se convierte en un ajuste concreto para cada peso de la red.
+  </p>
+</section>
+
+<section class="demo-section" id="practica">
+  <span class="section-kicker">// práctica</span>
+  <h2>Una red diminuta: 2 entradas → 2 neuronas ocultas → 1 salida</h2>
+  <p>
+    Pulsa "Paso adelante" para calcular la predicción de la red sobre el ejemplo actual, luego "Paso
+    atrás" para ver cómo se calcula el gradiente de cada peso, y "Actualizar pesos" para aplicar un paso de
+    descenso de gradiente. O usa "Entrenar varios ciclos" para ver la pérdida bajar de una sola vez.
+  </p>
+
+  <div class="game-panel">
+    <div class="chart-box wide">
+      <h3>Red</h3>
+      <div id="bp-diagram"></div>
+    </div>
+
+    <div class="vacuum-controls">
+      <button id="bp-new-example">🎲 Nuevo ejemplo</button>
+      <button id="bp-new-weights">🎲 Pesos aleatorios</button>
+    </div>
+
+    <div class="vacuum-controls">
+      <button id="bp-forward" class="primary">▶ Paso adelante</button>
+      <button id="bp-backward" class="primary" disabled>◀ Paso atrás</button>
+      <button id="bp-update" disabled>↺ Actualizar pesos</button>
+      <button id="bp-train-fast">🔁 Entrenar 60 ciclos</button>
+    </div>
+
+    <div class="vacuum-speed">
+      <span>Tasa de aprendizaje</span>
+      <input type="range" id="bp-lr" min="0.05" max="3" step="0.05" value="1.2" />
+      <span class="mono-value" id="bp-lr-value">1.20</span>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-value" id="bp-stat-yhat">—</div><div class="stat-label">Predicción (ŷ)</div></div>
+      <div class="stat-box"><div class="stat-value" id="bp-stat-target">—</div><div class="stat-label">Objetivo</div></div>
+      <div class="stat-box"><div class="stat-value" id="bp-stat-loss">—</div><div class="stat-label">Pérdida</div></div>
+      <div class="stat-box"><div class="stat-value" id="bp-stat-cycles">0</div><div class="stat-label">Ciclos entrenados</div></div>
+    </div>
+
+    <canvas id="bp-sparkline" width="600" height="90" style="width:100%;max-width:600px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-top:0.4rem;"></canvas>
+
+    <h3>Bitácora del cálculo</h3>
+    <div id="bp-log" class="callout" style="max-height:240px;overflow-y:auto;font-family:var(--font-mono);font-size:0.82rem;line-height:1.7;"></div>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>La regla de la cadena, capa por capa</h2>
+  <p>
+    El <strong>paso adelante</strong> es directo: cada neurona calcula su suma ponderada
+    <code>z</code> y la pasa por la función sigmoide para obtener su activación <code>a</code>, de entrada
+    a salida.
+  </p>
+  <p>
+    El <strong>paso atrás</strong> empieza en la salida: calcula cuánto cambiaría la pérdida si
+    <code>ŷ</code> cambiara un poco, y cuánto cambiaría <code>ŷ</code> si <code>z</code> de salida
+    cambiara — multiplicarlos da el "error local" de esa neurona (<code>δ</code>). Ese <code>δ</code> se
+    usa para calcular el gradiente de cada peso que llega a esa neurona (<code>δ · entrada</code>), y
+    también se <strong>reparte hacia atrás</strong> a las neuronas de la capa anterior, ponderado por los
+    mismos pesos que se usaron en el paso adelante — de ahí el nombre.
+  </p>
+  <div class="callout accent2">
+    <strong>Por qué no se recalcula todo desde cero para cada peso:</strong> calcular el gradiente de un
+    peso de la primera capa "a mano" (derivando la fórmula completa) recalcularía las mismas piezas
+    intermedias una y otra vez. La retropropagación las calcula <strong>una sola vez</strong>, de atrás
+    hacia adelante, y las reutiliza — por eso entrenar una red con millones de parámetros sigue siendo
+    factible.
+  </div>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>Después de "Entrenar 60 ciclos" sobre el mismo ejemplo, ¿qué le pasa a la pérdida? ¿Por qué eso no significa que la red "aprendió" en un sentido útil?</li>
+    <li>¿Qué pesos de la red tienen el gradiente más grande — los de la capa de salida o los de la capa oculta? ¿Por qué tendría sentido que fueran distintos?</li>
+    <li>Si la tasa de aprendizaje es demasiado alta, ¿qué esperarías ver en la curva de pérdida al entrenar varios ciclos?</li>
+    <li>La sigmoide se "aplana" para valores muy grandes o muy negativos de z (su derivada se acerca a 0). ¿Qué le pasaría al gradiente de un peso en una capa muy temprana de una red muy profunda, si cada capa aplana un poco la señal? (Pista: es el problema del "gradiente que desaparece".)</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  function $(id) { return document.getElementById(id); }
+
+  var forwardBtn = $('bp-forward'), backwardBtn = $('bp-backward'), updateBtn = $('bp-update'), trainFastBtn = $('bp-train-fast');
+  var newExampleBtn = $('bp-new-example'), newWeightsBtn = $('bp-new-weights');
+  var lrInput = $('bp-lr'), lrValue = $('bp-lr-value');
+  var statYhat = $('bp-stat-yhat'), statTarget = $('bp-stat-target'), statLoss = $('bp-stat-loss'), statCycles = $('bp-stat-cycles');
+  var logEl = $('bp-log');
+  var sparkline = $('bp-sparkline');
+  var sctx = sparkline.getContext('2d');
+
+  function sigmoid(z) { return 1 / (1 + Math.exp(-z)); }
+
+  var net = {};
+  function randomWeights() {
+    function r() { return (Math.random() * 2 - 1).toFixed(2) * 1; }
+    net = { w11: r(), w21: r(), b1: r(), w12: r(), w22: r(), b2: r(), v1: r(), v2: r(), bo: r() };
+  }
+
+  var example = { x1: 0.6, x2: -0.4, target: 1 };
+  function randomExample() {
+    example = {
+      x1: Math.round((Math.random() * 2 - 1) * 100) / 100,
+      x2: Math.round((Math.random() * 2 - 1) * 100) / 100,
+      target: Math.random() < 0.5 ? 0 : 1
+    };
+  }
+
+  var computed = { a1: null, a2: null, yhat: null, loss: null, grads: null };
+  var phase = 'idle';
+  var cyclesTrained = 0;
+  var lossHistory = [];
+
+  var svg = d3.select('#bp-diagram').append('svg')
+    .attr('viewBox', '0 0 420 380').attr('width', '100%').attr('height', 380);
+
+  var IX = 60, HX = 220, OX = 370;
+  var I1Y = 90, I2Y = 290, H1Y = 90, H2Y = 290, OY = 190;
+
+  function edge(x1, y1, x2, y2) {
+    return svg.append('line').attr('class', 'neuron-edge').attr('x1', x1).attr('y1', y1).attr('x2', x2).attr('y2', y2);
+  }
+  var e_i1h1 = edge(IX, I1Y, HX, H1Y);
+  var e_i1h2 = edge(IX, I1Y, HX, H2Y);
+  var e_i2h1 = edge(IX, I2Y, HX, H1Y);
+  var e_i2h2 = edge(IX, I2Y, HX, H2Y);
+  var e_h1o = edge(HX, H1Y, OX, OY);
+  var e_h2o = edge(HX, H2Y, OX, OY);
+
+  function labelAt(x, y) {
+    return svg.append('text').attr('class', 'neuron-edge-label').attr('x', x).attr('y', y).attr('text-anchor', 'middle');
+  }
+  var lbl_i1h1 = labelAt((IX + HX) / 2, (I1Y + H1Y) / 2 - 22);
+  var lbl_i1h2 = labelAt((IX + HX) / 2 + 30, (I1Y + H2Y) / 2 - 6);
+  var lbl_i2h1 = labelAt((IX + HX) / 2 + 30, (I2Y + H1Y) / 2 + 6);
+  var lbl_i2h2 = labelAt((IX + HX) / 2, (I2Y + H2Y) / 2 + 22);
+  var lbl_h1o = labelAt((HX + OX) / 2, (H1Y + OY) / 2 - 14);
+  var lbl_h2o = labelAt((HX + OX) / 2, (H2Y + OY) / 2 + 18);
+
+  var nodeI1 = svg.append('g').attr('class', 'neuron-node input');
+  var nodeI2 = svg.append('g').attr('class', 'neuron-node input');
+  var nodeH1 = svg.append('g').attr('class', 'neuron-node hidden');
+  var nodeH2 = svg.append('g').attr('class', 'neuron-node hidden');
+  var nodeO = svg.append('g').attr('class', 'neuron-node output');
+
+  function buildNode(sel, cx, cy, r) {
+    sel.append('circle').attr('cx', cx).attr('cy', cy).attr('r', r);
+    return sel.append('text').attr('x', cx).attr('y', cy + 4).attr('text-anchor', 'middle');
+  }
+  var txtI1 = buildNode(nodeI1, IX, I1Y, 24);
+  var txtI2 = buildNode(nodeI2, IX, I2Y, 24);
+  var txtH1 = buildNode(nodeH1, HX, H1Y, 26);
+  var txtH2 = buildNode(nodeH2, HX, H2Y, 26);
+  var txtO = buildNode(nodeO, OX, OY, 30);
+
+  svg.append('text').attr('x', IX).attr('y', I1Y - 34).attr('text-anchor', 'middle').style('fill', 'var(--muted)').style('font-size', '10px').text('entrada x₁');
+  svg.append('text').attr('x', IX).attr('y', I2Y + 40).attr('text-anchor', 'middle').style('fill', 'var(--muted)').style('font-size', '10px').text('entrada x₂');
+  svg.append('text').attr('x', HX).attr('y', H1Y - 36).attr('text-anchor', 'middle').style('fill', 'var(--muted)').style('font-size', '10px').text('oculta h₁');
+  svg.append('text').attr('x', HX).attr('y', H2Y + 42).attr('text-anchor', 'middle').style('fill', 'var(--muted)').style('font-size', '10px').text('oculta h₂');
+  svg.append('text').attr('x', OX).attr('y', OY - 42).attr('text-anchor', 'middle').style('fill', 'var(--muted)').style('font-size', '10px').text('salida ŷ');
+
+  function clearEdgeClasses() {
+    [e_i1h1, e_i1h2, e_i2h1, e_i2h2, e_h1o, e_h2o].forEach(function (e) {
+      e.attr('class', 'neuron-edge');
+    });
+  }
+
+  function log(msg) {
+    var line = document.createElement('div');
+    line.innerHTML = msg;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+  function clearLog() { logEl.innerHTML = ''; }
+
+  function renderStaticLabels() {
+    lbl_i1h1.text('w₁₁=' + Number(net.w11).toFixed(2));
+    lbl_i2h1.text('w₂₁=' + Number(net.w21).toFixed(2));
+    lbl_i1h2.text('w₁₂=' + Number(net.w12).toFixed(2));
+    lbl_i2h2.text('w₂₂=' + Number(net.w22).toFixed(2));
+    lbl_h1o.text('v₁=' + Number(net.v1).toFixed(2));
+    lbl_h2o.text('v₂=' + Number(net.v2).toFixed(2));
+
+    txtI1.text(example.x1.toFixed(2));
+    txtI2.text(example.x2.toFixed(2));
+    txtH1.text(computed.a1 === null ? '?' : computed.a1.toFixed(2));
+    txtH2.text(computed.a2 === null ? '?' : computed.a2.toFixed(2));
+    txtO.text(computed.yhat === null ? '?' : computed.yhat.toFixed(2));
+
+    statYhat.textContent = computed.yhat === null ? '—' : computed.yhat.toFixed(3);
+    statTarget.textContent = example.target;
+    statLoss.textContent = computed.loss === null ? '—' : computed.loss.toFixed(4);
+  }
+
+  function resetComputed() {
+    computed = { a1: null, a2: null, yhat: null, loss: null, grads: null };
+    phase = 'idle';
+    clearEdgeClasses();
+    forwardBtn.disabled = false;
+    backwardBtn.disabled = true;
+    updateBtn.disabled = true;
+    renderStaticLabels();
+  }
+
+  function runForward(withLog) {
+    var z1 = net.w11 * example.x1 + net.w21 * example.x2 + net.b1;
+    var a1 = sigmoid(z1);
+    var z2 = net.w12 * example.x1 + net.w22 * example.x2 + net.b2;
+    var a2 = sigmoid(z2);
+    var zo = net.v1 * a1 + net.v2 * a2 + net.bo;
+    var yhat = sigmoid(zo);
+    var loss = 0.5 * Math.pow(example.target - yhat, 2);
+    computed.a1 = a1; computed.a2 = a2; computed.yhat = yhat; computed.loss = loss;
+    if (withLog) {
+      log('<strong>Paso adelante</strong>');
+      log('z₁ = w₁₁x₁ + w₂₁x₂ + b₁ = ' + z1.toFixed(3) + ' &rarr; a₁ = σ(z₁) = ' + a1.toFixed(3));
+      log('z₂ = w₁₂x₁ + w₂₂x₂ + b₂ = ' + z2.toFixed(3) + ' &rarr; a₂ = σ(z₂) = ' + a2.toFixed(3));
+      log('z_o = v₁a₁ + v₂a₂ + b_o = ' + zo.toFixed(3) + ' &rarr; ŷ = σ(z_o) = ' + yhat.toFixed(3));
+      log('Pérdida = ½(objetivo − ŷ)² = ' + loss.toFixed(4));
+    }
+    return { z1: z1, a1: a1, z2: z2, a2: a2, zo: zo, yhat: yhat, loss: loss };
+  }
+
+  function runBackward(withLog) {
+    var a1 = computed.a1, a2 = computed.a2, yhat = computed.yhat;
+    var deltaO = (yhat - example.target) * yhat * (1 - yhat);
+    var gV1 = deltaO * a1, gV2 = deltaO * a2, gBo = deltaO;
+    var deltaH1 = deltaO * net.v1 * a1 * (1 - a1);
+    var deltaH2 = deltaO * net.v2 * a2 * (1 - a2);
+    var gW11 = deltaH1 * example.x1, gW21 = deltaH1 * example.x2, gB1 = deltaH1;
+    var gW12 = deltaH2 * example.x1, gW22 = deltaH2 * example.x2, gB2 = deltaH2;
+    computed.grads = { gW11: gW11, gW21: gW21, gB1: gB1, gW12: gW12, gW22: gW22, gB2: gB2, gV1: gV1, gV2: gV2, gBo: gBo };
+    if (withLog) {
+      log('<strong>Paso atrás</strong>');
+      log('δ_o = (ŷ − objetivo) · ŷ(1−ŷ) = ' + deltaO.toFixed(4));
+      log('∂L/∂v₁ = δ_o · a₁ = ' + gV1.toFixed(4) + ' · ∂L/∂v₂ = δ_o · a₂ = ' + gV2.toFixed(4));
+      log('δ_h1 = δ_o · v₁ · a₁(1−a₁) = ' + deltaH1.toFixed(4) + ' · δ_h2 = δ_o · v₂ · a₂(1−a₂) = ' + deltaH2.toFixed(4));
+      log('∂L/∂w₁₁ = δ_h1·x₁ = ' + gW11.toFixed(4) + ', ∂L/∂w₂₁ = δ_h1·x₂ = ' + gW21.toFixed(4));
+      log('∂L/∂w₁₂ = δ_h2·x₁ = ' + gW12.toFixed(4) + ', ∂L/∂w₂₂ = δ_h2·x₂ = ' + gW22.toFixed(4));
+    }
+  }
+
+  forwardBtn.addEventListener('click', function () {
+    clearLog();
+    clearEdgeClasses();
+    e_i1h1.classed('forward-active', true);
+    e_i1h2.classed('forward-active', true);
+    e_i2h1.classed('forward-active', true);
+    e_i2h2.classed('forward-active', true);
+    runForward(true);
+    txtH1.text(computed.a1.toFixed(2));
+    txtH2.text(computed.a2.toFixed(2));
+    statYhat.textContent = '—';
+    forwardBtn.disabled = true;
+    setTimeout(function () {
+      e_h1o.classed('forward-active', true);
+      e_h2o.classed('forward-active', true);
+      txtO.text(computed.yhat.toFixed(2));
+      statYhat.textContent = computed.yhat.toFixed(3);
+      statTarget.textContent = example.target;
+      statLoss.textContent = computed.loss.toFixed(4);
+      phase = 'forward-done';
+      backwardBtn.disabled = false;
+    }, 650);
+  });
+
+  backwardBtn.addEventListener('click', function () {
+    if (phase !== 'forward-done') return;
+    clearEdgeClasses();
+    e_h1o.classed('backward-active', true);
+    e_h2o.classed('backward-active', true);
+    runBackward(true);
+    backwardBtn.disabled = true;
+    setTimeout(function () {
+      e_i1h1.classed('backward-active', true);
+      e_i1h2.classed('backward-active', true);
+      e_i2h1.classed('backward-active', true);
+      e_i2h2.classed('backward-active', true);
+      phase = 'backward-done';
+      updateBtn.disabled = false;
+    }, 650);
+  });
+
+  updateBtn.addEventListener('click', function () {
+    if (phase !== 'backward-done' || !computed.grads) return;
+    var lr = parseFloat(lrInput.value);
+    var g = computed.grads;
+    net.w11 -= lr * g.gW11; net.w21 -= lr * g.gW21; net.b1 -= lr * g.gB1;
+    net.w12 -= lr * g.gW12; net.w22 -= lr * g.gW22; net.b2 -= lr * g.gB2;
+    net.v1 -= lr * g.gV1; net.v2 -= lr * g.gV2; net.bo -= lr * g.gBo;
+    log('<strong>Pesos actualizados</strong> con tasa de aprendizaje ' + lr.toFixed(2) + '.');
+    cyclesTrained++;
+    statCycles.textContent = cyclesTrained;
+    lossHistory.push(computed.loss);
+    drawSparkline();
+    resetComputed();
+  });
+
+  trainFastBtn.addEventListener('click', function () {
+    var lr = parseFloat(lrInput.value);
+    for (var i = 0; i < 60; i++) {
+      var f = runForward(false);
+      var a1 = f.a1, a2 = f.a2, yhat = f.yhat;
+      var deltaO = (yhat - example.target) * yhat * (1 - yhat);
+      var deltaH1 = deltaO * net.v1 * a1 * (1 - a1);
+      var deltaH2 = deltaO * net.v2 * a2 * (1 - a2);
+      net.v1 -= lr * deltaO * a1; net.v2 -= lr * deltaO * a2; net.bo -= lr * deltaO;
+      net.w11 -= lr * deltaH1 * example.x1; net.w21 -= lr * deltaH1 * example.x2; net.b1 -= lr * deltaH1;
+      net.w12 -= lr * deltaH2 * example.x1; net.w22 -= lr * deltaH2 * example.x2; net.b2 -= lr * deltaH2;
+      cyclesTrained++;
+      lossHistory.push(f.loss);
+    }
+    statCycles.textContent = cyclesTrained;
+    drawSparkline();
+    log('<strong>Entrenados 60 ciclos rápidos</strong> sobre este mismo ejemplo. Pérdida final: ' + lossHistory[lossHistory.length - 1].toFixed(5) + '.');
+    resetComputed();
+  });
+
+  function drawSparkline() {
+    sctx.clearRect(0, 0, sparkline.width, sparkline.height);
+    if (lossHistory.length < 2) return;
+    var recent = lossHistory.slice(-200);
+    var maxLoss = Math.max.apply(null, recent);
+    var pad = 6;
+    sctx.strokeStyle = '#ffee00';
+    sctx.lineWidth = 2;
+    sctx.beginPath();
+    recent.forEach(function (l, i) {
+      var x = pad + (sparkline.width - pad * 2) * (i / (recent.length - 1));
+      var y = sparkline.height - pad - (sparkline.height - pad * 2) * (l / (maxLoss || 1));
+      if (i === 0) sctx.moveTo(x, y); else sctx.lineTo(x, y);
+    });
+    sctx.stroke();
+  }
+
+  newExampleBtn.addEventListener('click', function () {
+    randomExample();
+    resetComputed();
+    clearLog();
+  });
+  newWeightsBtn.addEventListener('click', function () {
+    randomWeights();
+    resetComputed();
+    clearLog();
+  });
+  lrInput.addEventListener('input', function () { lrValue.textContent = parseFloat(lrInput.value).toFixed(2); });
+
+  randomWeights();
+  resetComputed();
+})();
+</script>
