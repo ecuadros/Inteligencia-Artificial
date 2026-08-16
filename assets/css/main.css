@@ -1675,6 +1675,15 @@ details.info-toggle .toggle-body li { margin-bottom: 0.4rem; }
 
 .chart-box.wide { flex-basis: 100%; }
 
+.chart-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.chart-row .chart-box { flex: 1 1 320px; max-width: 420px; }
+
 .chart-box h3 {
   margin-top: 0;
   font-size: 0.85rem;
