@@ -1,0 +1,347 @@
+---
+layout: demo
+title: "Filtros de convolución sobre imagen en vivo"
+subtitle: "La misma operación que viste como transformación de matrices en Álgebra y Geometría es, aquí, cómo una red convolucional aprende a ver bordes."
+eyebrow: "Módulo 6 · Visión por Computadora"
+module: 6
+module_title: "Visión por Computadora"
+prev_url: "/modulo-05-redes-neuronales/retropropagacion.html"
+prev_title: "Visualizador de retropropagación"
+next_url: "/modulo-06-vision-computadora/reconocedor-digitos-cnn.html"
+next_title: "Reconocedor de dígitos: la red pensando en vivo"
+---
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#practica">Práctica</a>
+  <a href="#mecanica">Cómo funciona</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>Una cámara solo ve números — ¿cómo se detecta un borde?</h2>
+  <p>
+    Para una computadora, una imagen es una cuadrícula de números (uno o tres por píxel). Un
+    <strong>filtro de convolución</strong> es una matriz pequeña (un <em>kernel</em>) que se desliza sobre
+    esa cuadrícula: en cada posición, multiplica sus valores contra los píxeles vecinos y suma el
+    resultado. Cambiar los números del kernel cambia por completo lo que el filtro "ve" — bordes, desenfoque,
+    relieve.
+  </p>
+  <p>
+    Esta es la misma operación de convolución que probablemente ya viste en Álgebra y Geometría como
+    transformación de matrices — aquí es literalmente el mismo cálculo, aplicado píxel por píxel.
+  </p>
+  <div class="callout">
+    <strong>El puente a las CNN:</strong> una red neuronal convolucional (CNN) no usa kernels fijos como
+    estos — <em>aprende</em> los números del kernel durante el entrenamiento, encontrando los filtros que
+    mejor ayudan a reconocer lo que sea que esté clasificando. Los del demo 3 de este módulo son ejemplos
+    de eso.
+  </div>
+</section>
+
+<section class="demo-section" id="practica">
+  <span class="section-kicker">// práctica</span>
+  <h2>Edita el kernel y mira el filtro reaccionar</h2>
+  <p>
+    Dibuja algo (o carga la escena de ejemplo, o activa tu cámara), elige un filtro preestablecido o edita
+    los 9 números del kernel a mano, y observa el resultado en tiempo real.
+  </p>
+
+  <div class="game-panel">
+    <div class="chart-row">
+      <div class="chart-box">
+        <h3>Original</h3>
+        <div class="digit-canvas-wrap" id="conv-source-wrap" style="background:#000;">
+          <canvas id="conv-source" width="220" height="220"></canvas>
+        </div>
+        <div class="demo-controls" style="margin-top:0.6rem;">
+          <span class="mono-value">Color:</span>
+          <button type="button" class="conv-swatch-btn active" data-color="#ffffff" style="background:#ffffff;"></button>
+          <button type="button" class="conv-swatch-btn" data-color="#f85149" style="background:#f85149;"></button>
+          <button type="button" class="conv-swatch-btn" data-color="#3fb950" style="background:#3fb950;"></button>
+          <button type="button" class="conv-swatch-btn" data-color="#58a6ff" style="background:#58a6ff;"></button>
+          <button type="button" class="conv-swatch-btn" data-color="#ffee00" style="background:#ffee00;"></button>
+        </div>
+        <div class="demo-controls">
+          <button id="conv-clear">🧹 Borrar</button>
+          <button id="conv-scene">🏞️ Escena de ejemplo</button>
+          <button id="conv-camera">🎥 Usar cámara</button>
+        </div>
+        <p class="game-hint" id="conv-cam-hint"></p>
+      </div>
+
+      <div class="chart-box">
+        <h3>Filtrada</h3>
+        <div class="digit-canvas-wrap" style="background:#000;">
+          <canvas id="conv-output" width="220" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-controls">
+      <button id="k-identity">Identidad</button>
+      <button id="k-blur">Desenfoque</button>
+      <button id="k-sharpen">Enfocar</button>
+      <button id="k-edge">Bordes</button>
+      <button id="k-sobelx">Sobel horizontal</button>
+      <button id="k-sobely">Sobel vertical</button>
+      <button id="k-emboss">Relieve</button>
+    </div>
+
+    <div id="kernel-grid" class="kernel-grid"></div>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>Multiplicar y sumar, un vecindario a la vez</h2>
+  <p>
+    Para cada píxel, el filtro toma sus 8 vecinos más él mismo (una ventana de 3×3), multiplica cada uno
+    por el número del kernel en esa posición, y suma todo. Ese total (normalizado si el kernel suma más de
+    1, para no saturar la imagen de blanco) se convierte en el nuevo valor de ese píxel.
+  </p>
+  <p>
+    Un kernel de <strong>bordes</strong> (como <code>[0,1,0; 1,-4,1; 0,1,0]</code>) da un resultado cercano
+    a cero en zonas planas (donde el píxel central se parece a sus vecinos) y un valor grande donde el
+    color cambia bruscamente — ahí es donde hay un borde. Un kernel de <strong>desenfoque</strong> promedia
+    la vecindad, suavizando el ruido.
+  </p>
+  <div class="callout accent2">
+    Prueba Sobel horizontal y Sobel vertical por separado sobre la misma imagen — vas a notar que uno
+    resalta los bordes verticales y el otro los horizontales. Combinar varios filtros distintos, cada uno
+    sensible a algo distinto, es exactamente la idea detrás de tener múltiples canales en una capa
+    convolucional.
+  </div>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>¿Por qué el kernel de desenfoque necesita normalizarse (dividir entre 9) y el de bordes no?</li>
+    <li>Si tuvieras que diseñar a mano un kernel para detectar solo líneas diagonales, ¿qué números pondrías?</li>
+    <li>¿Qué ventaja tiene que una CNN <em>aprenda</em> sus kernels en vez de que un ingeniero los diseñe a mano, como aquí?</li>
+    <li>¿Por qué aplicar el mismo kernel de bordes sobre una imagen borrosa (primero pásala por el filtro de desenfoque) da un resultado más "limpio" que aplicarlo directo?</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  var KERNELS = {
+    identity: [[0, 0, 0], [0, 1, 0], [0, 0, 0]],
+    blur: [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
+    sharpen: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]],
+    edge: [[0, 1, 0], [1, -4, 1], [0, 1, 0]],
+    sobelx: [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]],
+    sobely: [[-1, -2, -1], [0, 0, 0], [1, 2, 1]],
+    emboss: [[-2, -1, 0], [-1, 1, 1], [0, 1, 2]]
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  var sourceCanvas = $('conv-source');
+  var sctx = sourceCanvas.getContext('2d', { willReadFrequently: true });
+  var outputCanvas = $('conv-output');
+  var octx = outputCanvas.getContext('2d');
+  var kernelGridEl = $('kernel-grid');
+  var clearBtn = $('conv-clear');
+  var sceneBtn = $('conv-scene');
+  var cameraBtn = $('conv-camera');
+  var camHint = $('conv-cam-hint');
+
+  var state = {
+    kernel: KERNELS.edge.map(function (row) { return row.slice(); }),
+    drawing: false,
+    lastPos: null,
+    color: '#ffffff',
+    cameraOn: false,
+    video: null,
+    rafId: null
+  };
+
+  function initSource() {
+    sctx.fillStyle = '#000';
+    sctx.fillRect(0, 0, sourceCanvas.width, sourceCanvas.height);
+  }
+  initSource();
+
+  function buildKernelGrid() {
+    kernelGridEl.innerHTML = '';
+    for (var r = 0; r < 3; r++) {
+      for (var c = 0; c < 3; c++) {
+        (function (rr, cc) {
+          var input = document.createElement('input');
+          input.type = 'number';
+          input.step = '1';
+          input.className = 'kernel-cell';
+          input.value = state.kernel[rr][cc];
+          input.addEventListener('input', function () {
+            state.kernel[rr][cc] = parseFloat(input.value) || 0;
+            applyFilter();
+          });
+          kernelGridEl.appendChild(input);
+        })(r, c);
+      }
+    }
+  }
+
+  function setKernel(name) {
+    state.kernel = KERNELS[name].map(function (row) { return row.slice(); });
+    buildKernelGrid();
+    applyFilter();
+  }
+
+  function convolve() {
+    var w = sourceCanvas.width, h = sourceCanvas.height;
+    var src = sctx.getImageData(0, 0, w, h);
+    var out = octx.createImageData(w, h);
+    var k = state.kernel;
+    var sum = 0;
+    for (var i = 0; i < 3; i++) for (var j = 0; j < 3; j++) sum += k[i][j];
+    var norm = Math.abs(sum) > 1e-6 ? sum : 1;
+
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        var rAcc = 0, gAcc = 0, bAcc = 0;
+        for (var ky = -1; ky <= 1; ky++) {
+          for (var kx = -1; kx <= 1; kx++) {
+            var sx = Math.min(w - 1, Math.max(0, x + kx));
+            var sy = Math.min(h - 1, Math.max(0, y + ky));
+            var idx = (sy * w + sx) * 4;
+            var weight = k[ky + 1][kx + 1];
+            rAcc += src.data[idx] * weight;
+            gAcc += src.data[idx + 1] * weight;
+            bAcc += src.data[idx + 2] * weight;
+          }
+        }
+        var oi = (y * w + x) * 4;
+        out.data[oi] = Math.min(255, Math.max(0, rAcc / norm));
+        out.data[oi + 1] = Math.min(255, Math.max(0, gAcc / norm));
+        out.data[oi + 2] = Math.min(255, Math.max(0, bAcc / norm));
+        out.data[oi + 3] = 255;
+      }
+    }
+    octx.putImageData(out, 0, 0);
+  }
+
+  var pending = false;
+  function applyFilter() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(function () { convolve(); pending = false; });
+  }
+
+  function canvasPos(e) {
+    var rect = sourceCanvas.getBoundingClientRect();
+    var cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    var cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    return { x: cx * (sourceCanvas.width / rect.width), y: cy * (sourceCanvas.height / rect.height) };
+  }
+
+  function startDraw(e) {
+    if (state.cameraOn) return;
+    e.preventDefault();
+    state.drawing = true;
+    state.lastPos = canvasPos(e);
+  }
+  function moveDraw(e) {
+    if (!state.drawing) return;
+    e.preventDefault();
+    var p = canvasPos(e);
+    sctx.strokeStyle = state.color;
+    sctx.lineWidth = 12;
+    sctx.lineCap = 'round';
+    sctx.lineJoin = 'round';
+    sctx.beginPath();
+    sctx.moveTo(state.lastPos.x, state.lastPos.y);
+    sctx.lineTo(p.x, p.y);
+    sctx.stroke();
+    state.lastPos = p;
+    applyFilter();
+  }
+  function endDraw() { state.drawing = false; }
+
+  sourceCanvas.addEventListener('mousedown', startDraw);
+  sourceCanvas.addEventListener('mousemove', moveDraw);
+  window.addEventListener('mouseup', endDraw);
+  sourceCanvas.addEventListener('touchstart', startDraw, { passive: false });
+  sourceCanvas.addEventListener('touchmove', moveDraw, { passive: false });
+  sourceCanvas.addEventListener('touchend', endDraw);
+
+  Array.prototype.forEach.call(document.querySelectorAll('.conv-swatch-btn'), function (btn) {
+    btn.addEventListener('click', function () {
+      state.color = btn.dataset.color;
+      Array.prototype.forEach.call(document.querySelectorAll('.conv-swatch-btn'), function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+    });
+  });
+
+  clearBtn.addEventListener('click', function () { initSource(); applyFilter(); });
+
+  sceneBtn.addEventListener('click', function () {
+    initSource();
+    sctx.fillStyle = '#58a6ff';
+    sctx.fillRect(20, 120, 180, 80);
+    sctx.fillStyle = '#f85149';
+    sctx.beginPath();
+    sctx.moveTo(110, 40); sctx.lineTo(30, 120); sctx.lineTo(190, 120);
+    sctx.closePath(); sctx.fill();
+    sctx.fillStyle = '#ffee00';
+    sctx.beginPath(); sctx.arc(170, 55, 22, 0, Math.PI * 2); sctx.fill();
+    sctx.strokeStyle = '#3fb950';
+    sctx.lineWidth = 6;
+    sctx.beginPath(); sctx.moveTo(40, 200); sctx.lineTo(200, 200); sctx.stroke();
+    applyFilter();
+  });
+
+  function stopCamera() {
+    state.cameraOn = false;
+    cameraBtn.textContent = '🎥 Usar cámara';
+    camHint.textContent = '';
+    if (state.rafId) cancelAnimationFrame(state.rafId);
+    if (state.video && state.video.srcObject) {
+      state.video.srcObject.getTracks().forEach(function (t) { t.stop(); });
+    }
+  }
+
+  function cameraLoop() {
+    if (!state.cameraOn) return;
+    sctx.drawImage(state.video, 0, 0, sourceCanvas.width, sourceCanvas.height);
+    convolve();
+    state.rafId = requestAnimationFrame(cameraLoop);
+  }
+
+  cameraBtn.addEventListener('click', function () {
+    if (state.cameraOn) { stopCamera(); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      camHint.textContent = 'Tu navegador no permite acceso a la cámara aquí.';
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ video: true }).then(function (stream) {
+      state.video = document.createElement('video');
+      state.video.srcObject = stream;
+      state.video.play();
+      state.cameraOn = true;
+      cameraBtn.textContent = '⏹ Detener cámara';
+      camHint.textContent = 'Cámara activa — el filtro se aplica en vivo.';
+      state.video.addEventListener('loadedmetadata', cameraLoop);
+    }).catch(function () {
+      camHint.textContent = 'No se pudo acceder a la cámara (permiso denegado o no disponible).';
+    });
+  });
+
+  buildKernelGrid();
+  $('k-identity').addEventListener('click', function () { setKernel('identity'); });
+  $('k-blur').addEventListener('click', function () { setKernel('blur'); });
+  $('k-sharpen').addEventListener('click', function () { setKernel('sharpen'); });
+  $('k-edge').addEventListener('click', function () { setKernel('edge'); });
+  $('k-sobelx').addEventListener('click', function () { setKernel('sobelx'); });
+  $('k-sobely').addEventListener('click', function () { setKernel('sobely'); });
+  $('k-emboss').addEventListener('click', function () { setKernel('emboss'); });
+
+  applyFilter();
+})();
+</script>

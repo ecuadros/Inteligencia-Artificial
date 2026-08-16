@@ -2180,3 +2180,97 @@ details.info-toggle .toggle-body li { margin-bottom: 0.4rem; }
 .predict-bar-row.top .predict-bar-fill { background: var(--accent3); }
 .predict-bar-row.top .predict-bar-label { color: var(--accent3); font-weight: 700; }
 .predict-bar-value { width: 3rem; text-align: right; color: var(--muted); }
+
+/* ============================================================
+   Visión por computadora — kernels de convolución
+   ============================================================ */
+.kernel-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  gap: 6px;
+  margin-top: 0.75rem;
+}
+
+.kernel-cell {
+  width: 56px;
+  height: 44px;
+  text-align: center;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+}
+
+.kernel-cell:focus { outline: none; border-color: var(--accent); }
+
+.conv-swatch-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  padding: 0;
+}
+
+.conv-swatch-btn.active { border-color: #fff; box-shadow: 0 0 0 2px var(--accent); }
+
+.feature-map-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.feature-map-tile {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem;
+  text-align: center;
+}
+
+.feature-map-tile canvas { display: block; border-radius: 4px; }
+
+.feature-map-label {
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.neuron-group { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.neuron-unit { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+.neuron-rect {
+  width: 28px;
+  height: 50px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.neuron-rect-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: var(--accent);
+  transition: height 0.05s linear;
+}
+
+.neuron-unit.output .neuron-rect { width: 32px; }
+.neuron-unit.output .neuron-rect-fill { background: var(--accent2); }
+.neuron-unit.output.top .neuron-rect-fill { background: var(--accent3); }
+.neuron-unit.output.top .neuron-caption { color: var(--accent3); font-weight: 700; }
+
+.neuron-caption {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  min-height: 1em;
+}

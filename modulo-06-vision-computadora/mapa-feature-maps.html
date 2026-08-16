@@ -1,0 +1,288 @@
+---
+layout: demo
+title: "Mapa de feature maps de una CNN"
+subtitle: "Un filtro produce una imagen. Seis filtros producen seis 'lecturas' distintas de la misma imagen — eso es una capa convolucional."
+eyebrow: "Módulo 6 · Visión por Computadora"
+module: 6
+module_title: "Visión por Computadora"
+prev_url: "/modulo-06-vision-computadora/reconocedor-digitos-cnn.html"
+prev_title: "Reconocedor de dígitos: la red pensando en vivo"
+---
+
+<nav class="demo-toc">
+  <a href="#problema">El problema</a>
+  <a href="#practica">Práctica</a>
+  <a href="#mecanica">Cómo funciona</a>
+  <a href="#debate">Debate</a>
+</nav>
+
+<section class="demo-section" id="problema">
+  <span class="section-kicker">// el problema</span>
+  <h2>¿Qué ve realmente cada capa de una CNN?</h2>
+  <p>
+    En el demo 1 aplicaste un filtro a la vez y viste el resultado. Una capa convolucional real no aplica
+    <em>un</em> filtro — aplica muchos en paralelo, cada uno produciendo su propia versión filtrada de la
+    imagen, llamada <strong>mapa de características (feature map)</strong>. Juntos, esos mapas son la
+    "opinión" de esa capa sobre la imagen: uno puede resaltar bordes verticales, otro texturas, otro
+    manchas de color.
+  </p>
+  <p>
+    Aquí vas a ver los seis mapas de características que produce una capa con seis filtros fijos sobre tu
+    propio dibujo, y qué le pasa a esos mapas cuando se reducen con <em>max pooling</em>.
+  </p>
+</section>
+
+<section class="demo-section" id="practica">
+  <span class="section-kicker">// práctica</span>
+  <h2>Dibuja algo y observa los seis mapas</h2>
+
+  <div class="game-panel">
+    <div class="chart-row">
+      <div class="chart-box" style="flex: 0 1 260px;">
+        <h3>Entrada</h3>
+        <div class="digit-canvas-wrap">
+          <canvas id="fm-source" width="200" height="200"></canvas>
+        </div>
+        <div class="demo-controls" style="margin-top:0.6rem;">
+          <button id="fm-clear">🧹 Borrar</button>
+          <button id="fm-scene">🏞️ Escena de ejemplo</button>
+        </div>
+      </div>
+    </div>
+
+    <h3>Capa 1 — seis feature maps (44×44)</h3>
+    <div class="feature-map-grid" id="fm-layer1"></div>
+
+    <h3 style="margin-top:1.5rem;">Después de max pooling 2×2 (22×22)</h3>
+    <p class="game-hint">Cada mapa se reduce a la mitad, quedándose con el valor más alto de cada bloque de 2×2 píxeles.</p>
+    <div class="feature-map-grid" id="fm-layer1-pooled"></div>
+  </div>
+</section>
+
+<section class="demo-section" id="mecanica">
+  <span class="section-kicker">// cómo funciona</span>
+  <h2>Muchos filtros en paralelo, luego resumir</h2>
+  <p>
+    Cada uno de los seis mapas de arriba es el resultado de convolucionar tu dibujo con un kernel distinto
+    (los mismos tipos del demo 1: Sobel horizontal, Sobel vertical, bordes, desenfoque, enfoque y relieve).
+    En una CNN real esos kernels no están fijos como aquí — se inicializan al azar y se ajustan con
+    retropropagación, así que terminan siendo filtros que la red misma descubrió que le sirven.
+  </p>
+  <p>
+    El <strong>max pooling</strong> reduce cada mapa a la mitad de su tamaño, tomando el valor máximo de
+    cada bloque de 2×2. Eso logra dos cosas: reduce la cantidad de números que hay que procesar en las
+    capas siguientes, y hace que la red sea un poco más tolerante a que un rasgo esté un par de píxeles
+    corrido de donde estaba antes.
+  </p>
+  <div class="callout accent2">
+    <strong>Apilando capas:</strong> una CNN real repite este proceso varias veces — la salida de esta capa
+    (seis mapas reducidos) se vuelve la entrada de una segunda capa convolucional, que combina esos seis
+    mapas en un conjunto nuevo, más abstracto, de mapas. Las primeras capas tienden a detectar bordes y
+    texturas simples; las capas más profundas terminan respondiendo a formas más complejas (ojos, ruedas,
+    letras completas).
+  </div>
+</section>
+
+<section class="demo-section" id="debate">
+  <span class="section-kicker">// para discutir en clase</span>
+  <h2>Preguntas para el debate</h2>
+  <ul class="debate-list">
+    <li>¿Cuál de los seis mapas cambia más cuando dibujas líneas diagonales en vez de horizontales o verticales?</li>
+    <li>¿Por qué reducir el tamaño con pooling no significa perder toda la información relevante?</li>
+    <li>Si apilaras diez capas convolucionales, ¿qué esperarías que reconozca la última capa, comparado con la primera?</li>
+    <li>¿Qué ventaja de cómputo tiene reducir el tamaño de los mapas capa tras capa, en vez de mantenerlos siempre al tamaño original?</li>
+  </ul>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  var SIZE = 44;
+  var FILTERS = [
+    { name: 'Sobel horizontal', kernel: [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]] },
+    { name: 'Sobel vertical', kernel: [[-1, -2, -1], [0, 0, 0], [1, 2, 1]] },
+    { name: 'Bordes', kernel: [[0, 1, 0], [1, -4, 1], [0, 1, 0]] },
+    { name: 'Desenfoque', kernel: [[1, 1, 1], [1, 1, 1], [1, 1, 1]] },
+    { name: 'Enfoque', kernel: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]] },
+    { name: 'Relieve', kernel: [[-2, -1, 0], [-1, 1, 1], [0, 1, 2]] }
+  ];
+
+  function $(id) { return document.getElementById(id); }
+
+  var sourceCanvas = $('fm-source');
+  var sctx = sourceCanvas.getContext('2d', { willReadFrequently: true });
+  var clearBtn = $('fm-clear');
+  var sceneBtn = $('fm-scene');
+  var layer1El = $('fm-layer1');
+  var layer1PooledEl = $('fm-layer1-pooled');
+
+  var drawing = false, lastPos = null;
+
+  function initSource() {
+    sctx.fillStyle = '#000';
+    sctx.fillRect(0, 0, sourceCanvas.width, sourceCanvas.height);
+  }
+  initSource();
+
+  function canvasPos(e) {
+    var rect = sourceCanvas.getBoundingClientRect();
+    var cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    var cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    return { x: cx * (sourceCanvas.width / rect.width), y: cy * (sourceCanvas.height / rect.height) };
+  }
+  function startDraw(e) { e.preventDefault(); drawing = true; lastPos = canvasPos(e); }
+  function moveDraw(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    var p = canvasPos(e);
+    sctx.strokeStyle = '#fff';
+    sctx.lineWidth = 12;
+    sctx.lineCap = 'round';
+    sctx.lineJoin = 'round';
+    sctx.beginPath();
+    sctx.moveTo(lastPos.x, lastPos.y);
+    sctx.lineTo(p.x, p.y);
+    sctx.stroke();
+    lastPos = p;
+    scheduleCompute();
+  }
+  function endDraw() { drawing = false; }
+
+  sourceCanvas.addEventListener('mousedown', startDraw);
+  sourceCanvas.addEventListener('mousemove', moveDraw);
+  window.addEventListener('mouseup', endDraw);
+  sourceCanvas.addEventListener('touchstart', startDraw, { passive: false });
+  sourceCanvas.addEventListener('touchmove', moveDraw, { passive: false });
+  sourceCanvas.addEventListener('touchend', endDraw);
+
+  clearBtn.addEventListener('click', function () { initSource(); scheduleCompute(); });
+  sceneBtn.addEventListener('click', function () {
+    initSource();
+    sctx.strokeStyle = '#fff';
+    sctx.lineWidth = 10;
+    sctx.strokeRect(40, 40, 120, 120);
+    sctx.beginPath(); sctx.moveTo(40, 40); sctx.lineTo(160, 160); sctx.stroke();
+    sctx.beginPath(); sctx.arc(100, 100, 30, 0, Math.PI * 2); sctx.stroke();
+    scheduleCompute();
+  });
+
+  function getGrayscale() {
+    var off = document.createElement('canvas');
+    off.width = SIZE; off.height = SIZE;
+    var octx = off.getContext('2d');
+    octx.imageSmoothingEnabled = true;
+    octx.drawImage(sourceCanvas, 0, 0, SIZE, SIZE);
+    var data = octx.getImageData(0, 0, SIZE, SIZE).data;
+    var grid = [];
+    for (var y = 0; y < SIZE; y++) {
+      var row = [];
+      for (var x = 0; x < SIZE; x++) row.push(data[(y * SIZE + x) * 4] / 255);
+      grid.push(row);
+    }
+    return grid;
+  }
+
+  function convolve2D(grid, kernel) {
+    var h = grid.length, w = grid[0].length;
+    var out = [];
+    for (var y = 0; y < h; y++) {
+      var row = [];
+      for (var x = 0; x < w; x++) {
+        var acc = 0;
+        for (var ky = -1; ky <= 1; ky++) {
+          for (var kx = -1; kx <= 1; kx++) {
+            var sx = Math.min(w - 1, Math.max(0, x + kx));
+            var sy = Math.min(h - 1, Math.max(0, y + ky));
+            acc += grid[sy][sx] * kernel[ky + 1][kx + 1];
+          }
+        }
+        row.push(acc);
+      }
+      out.push(row);
+    }
+    return out;
+  }
+
+  function maxPool2x2(grid) {
+    var h = grid.length, w = grid[0].length;
+    var outH = Math.floor(h / 2), outW = Math.floor(w / 2);
+    var out = [];
+    for (var y = 0; y < outH; y++) {
+      var row = [];
+      for (var x = 0; x < outW; x++) {
+        var v = Math.max(
+          grid[y * 2][x * 2], grid[y * 2][x * 2 + 1],
+          grid[y * 2 + 1][x * 2], grid[y * 2 + 1][x * 2 + 1]
+        );
+        row.push(v);
+      }
+      out.push(row);
+    }
+    return out;
+  }
+
+  function renderGrid(grid, targetCanvas) {
+    var h = grid.length, w = grid[0].length;
+    var min = Infinity, max = -Infinity;
+    for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+      if (grid[y][x] < min) min = grid[y][x];
+      if (grid[y][x] > max) max = grid[y][x];
+    }
+    var range = (max - min) || 1;
+    targetCanvas.width = w; targetCanvas.height = h;
+    var tctx = targetCanvas.getContext('2d');
+    var img = tctx.createImageData(w, h);
+    for (var yy = 0; yy < h; yy++) {
+      for (var xx = 0; xx < w; xx++) {
+        var v = Math.round(((grid[yy][xx] - min) / range) * 255);
+        var idx = (yy * w + xx) * 4;
+        img.data[idx] = v; img.data[idx + 1] = v; img.data[idx + 2] = v; img.data[idx + 3] = 255;
+      }
+    }
+    tctx.putImageData(img, 0, 0);
+  }
+
+  function buildTiles(container, size) {
+    container.innerHTML = '';
+    var canvases = [];
+    FILTERS.forEach(function (f) {
+      var tile = document.createElement('div');
+      tile.className = 'feature-map-tile';
+      var canvasEl = document.createElement('canvas');
+      canvasEl.width = size; canvasEl.height = size;
+      canvasEl.style.width = '100%';
+      canvasEl.style.imageRendering = 'pixelated';
+      var label = document.createElement('div');
+      label.className = 'feature-map-label';
+      label.textContent = f.name;
+      tile.appendChild(canvasEl);
+      tile.appendChild(label);
+      container.appendChild(tile);
+      canvases.push(canvasEl);
+    });
+    return canvases;
+  }
+
+  var tiles1 = buildTiles(layer1El, SIZE);
+  var tiles1Pooled = buildTiles(layer1PooledEl, SIZE / 2);
+
+  var pending = false;
+  function scheduleCompute() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(function () { compute(); pending = false; });
+  }
+
+  function compute() {
+    var gray = getGrayscale();
+    FILTERS.forEach(function (f, i) {
+      var fm = convolve2D(gray, f.kernel);
+      renderGrid(fm, tiles1[i]);
+      renderGrid(maxPool2x2(fm), tiles1Pooled[i]);
+    });
+  }
+
+  compute();
+})();
+</script>
